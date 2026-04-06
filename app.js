@@ -42,6 +42,7 @@ let curPartyId = null;
 let editPartyId = null;
 let editEntryIdx = null;
 let curUnit = 'kg';
+let pendingImage = null; // base64 string or null
 
 // ===== SPLASH =====
 window.addEventListener('DOMContentLoaded', () => {
@@ -238,7 +239,7 @@ function renderEntries() {
 
     const tbody = document.getElementById('etbody');
     if (cnt === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:40px;color:var(--text3);">
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text3);">
             <span style="font-size:36px;display:block;margin-bottom:8px;">📝</span>
             No entries yet. Tap <strong>+</strong> to add.
         </td></tr>`;
@@ -247,6 +248,10 @@ function renderEntries() {
 
     tbody.innerHTML = p.entries.map((e, i) => `<tr>
         <td><span class="entry-idx">${i + 1}</span></td>
+        <td class="td-img">${e.img
+            ? `<img class="entry-thumb" src="${e.img}" onclick="viewImage(${i})" alt="#${i+1}">`
+            : `<div class="no-img-icon">📷</div>`}
+        </td>
         <td class="td-pcs">${fmtNum(e.pcs)} pcs</td>
         <td class="td-wt">${fmtWt(e.wg)}</td>
         <td class="td-act">
@@ -256,12 +261,74 @@ function renderEntries() {
     </tr>`).join('');
 }
 
+// ===== IMAGE HANDLING =====
+function compressImage(file, maxW, quality) {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let w = img.width, h = img.height;
+                if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+                canvas.width = w; canvas.height = h;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, w, h);
+                resolve(canvas.toDataURL('image/jpeg', quality));
+            };
+            img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+function triggerImagePick() {
+    document.getElementById('ie-img').click();
+}
+
+async function onImagePicked(ev) {
+    const file = ev.target.files[0];
+    if (!file) return;
+    // Compress to max 600px wide, 0.6 quality to save localStorage space
+    const base64 = await compressImage(file, 600, 0.6);
+    pendingImage = base64;
+    showImagePreview(base64);
+}
+
+function showImagePreview(src) {
+    const wrap = document.getElementById('img-preview-wrap');
+    const img = document.getElementById('img-preview');
+    if (src) {
+        img.src = src;
+        wrap.classList.remove('empty');
+    } else {
+        img.src = '';
+        wrap.classList.add('empty');
+    }
+}
+
+function removeImage(ev) {
+    ev.stopPropagation();
+    pendingImage = null;
+    document.getElementById('ie-img').value = '';
+    showImagePreview(null);
+}
+
+function viewImage(idx) {
+    const p = data.parties.find(x => x.id === curPartyId);
+    if (!p || !p.entries[idx] || !p.entries[idx].img) return;
+    document.getElementById('imgview-img').src = p.entries[idx].img;
+    openModal('m-imgview');
+}
+
 // ===== ENTRY CRUD =====
 function openEntryModal() {
     editEntryIdx = null;
     document.getElementById('m-entry-title').textContent = 'Add Entry';
     document.getElementById('f-entry').reset();
     curUnit = 'kg';
+    pendingImage = null;
+    showImagePreview(null);
     syncUnitUI();
     openModal('m-entry');
     setTimeout(() => document.getElementById('ie-pcs').focus(), 300);
@@ -277,6 +344,8 @@ function openEditEntry(idx) {
     const bu = bestUnit(e.wg);
     document.getElementById('ie-wt').value = bu.val;
     curUnit = bu.unit;
+    pendingImage = e.img || null;
+    showImagePreview(pendingImage);
     syncUnitUI();
     openModal('m-entry');
 }
@@ -316,12 +385,13 @@ function saveEntry(e) {
     if (!p) return;
 
     if (editEntryIdx !== null) {
-        p.entries[editEntryIdx] = { pcs, wg };
+        p.entries[editEntryIdx] = { pcs, wg, img: pendingImage || p.entries[editEntryIdx].img || null };
         toast('Entry updated ✓');
     } else {
-        p.entries.push({ pcs, wg });
+        p.entries.push({ pcs, wg, img: pendingImage || null });
         toast('Entry added ✓');
     }
+    pendingImage = null;
     save(data);
     closeModal('m-entry');
     renderEntries();
