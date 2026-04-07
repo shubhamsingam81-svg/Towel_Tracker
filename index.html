@@ -32,7 +32,13 @@
             <div class="header-inner">
                 <div class="header-row">
                     <h1 class="app-title">🧺 Towel Tracker</h1>
-                    <button class="icon-btn white" onclick="exportAllData()" title="Export All">
+                    <button class="icon-btn white" onclick="openAnalytics()" title="Analytics">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17V9M13 17v-5M8 17v-3"/></svg>
+                    </button>
+                    <button class="icon-btn white" onclick="openModal('m-settings')" title="Settings">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m3.08 3.08l4.24 4.24M1 12h6m6 0h6m-16.78 7.78l4.24-4.24m3.08-3.08l4.24-4.24"/></svg>
+                    </button>
+                    <button class="icon-btn white" onclick="openModal('m-export')" title="Export All">
                         <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
                     </button>
                 </div>
@@ -68,9 +74,17 @@
                         <h1 class="entry-title" id="month-hdr-name"></h1>
                         <p class="entry-sub">Select a month</p>
                     </div>
-                    <button class="icon-btn white" onclick="openPartyModal(true)" title="Edit Party">
-                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                    </button>
+                    <div style="display: flex; gap: 5px;">
+                        <button class="icon-btn white" onclick="exportPartyExcel()" title="Export to Excel">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20M2 12h20"/><path d="M6 6h12v12H6z"/></svg>
+                        </button>
+                        <button class="icon-btn white" onclick="exportPartyPDF()" title="Export to PDF">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V10z"/><path d="M14 2v8h8M9 15h6M9 19h6"/></svg>
+                        </button>
+                        <button class="icon-btn white" onclick="openPartyModal(true)" title="Edit Party">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        </button>
+                    </div>
                 </div>
                 <div id="party-stats" class="stats-row hidden">
                     <div class="stat-chip"><span class="stat-chip-val" id="ps-months">0</span><span class="stat-chip-lbl">Months</span></div>
@@ -124,12 +138,17 @@
                         <h1 class="entry-title" id="e-title"></h1>
                         <p class="entry-sub" id="e-sub"></p>
                     </div>
-                    <button class="icon-btn white" onclick="openSizeModal(true)" title="Edit Size">
-                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                    </button>
-                    <button class="icon-btn white" onclick="shareReport()" title="Share">
-                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v13"/></svg>
-                    </button>
+                    <div style="display: flex; gap: 5px;">
+                        <button class="icon-btn white" onclick="exportSizeExcel()" title="Export to Excel">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20M2 12h20"/><path d="M6 6h12v12H6z"/></svg>
+                        </button>
+                        <button class="icon-btn white" onclick="exportSizePDF()" title="Export to PDF">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V10z"/><path d="M14 2v8h8M9 15h6M9 19h6"/></svg>
+                        </button>
+                        <button class="icon-btn white" onclick="openSizeModal(true)" title="Edit Size">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        </button>
+                    </div>
                 </div>
             </div>
         </header>
@@ -278,10 +297,99 @@
         </div>
     </div>
 
+    <!-- ========== MODAL: EXPORT OPTIONS ========== -->
+    <div id="m-export" class="modal-bg" onclick="closeBg(event,'m-export')">
+        <div class="modal-sheet">
+            <div class="modal-handle"></div>
+            <h2 class="modal-h">📊 Export All Data</h2>
+            <p style="color: #666; font-size: 14px; margin-bottom: 20px;">Choose export format for complete dataset</p>
+            <div class="export-options">
+                <button class="export-btn excel-btn" onclick="exportAllDataExcel(); closeModal('m-export')">
+                    <span class="export-icon">📊</span>
+                    <span class="export-label">Export to Excel</span>
+                    <span class="export-desc">.xlsx format</span>
+                </button>
+                <button class="export-btn pdf-btn" onclick="exportAllDataPDF(); closeModal('m-export')">
+                    <span class="export-icon">📄</span>
+                    <span class="export-label">Export to PDF</span>
+                    <span class="export-desc">.pdf format</span>
+                </button>
+            </div>
+            <div class="modal-btns" style="margin-top: 20px;">
+                <button class="btn ghost" onclick="closeModal('m-export')" style="width: 100%;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== MODAL: SETTINGS ========== -->
+    <div id="m-settings" class="modal-bg" onclick="closeBg(event,'m-settings')">
+        <div class="modal-sheet">
+            <div class="modal-handle"></div>
+            <h2 class="modal-h">⚙️ Settings</h2>
+            
+            <div style="margin-bottom: 24px;">
+                <h3 style="color: #5B61FF; font-size: 14px; font-weight: 700; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Appearance</h3>
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: #f8fafb; border-radius: 10px; margin-bottom: 12px;">
+                    <span style="font-weight: 600; color: #1e293b;">🌙 Dark Mode</span>
+                    <button class="ubtn" style="background: #e2e8f0; padding: 8px 16px; border-radius: 20px; border: none; cursor: pointer;" onclick="toggleDarkMode()">
+                        <span id="dm-toggle">OFF</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 24px;">
+                <h3 style="color: #5B61FF; font-size: 14px; font-weight: 700; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Data</h3>
+                <button class="btn ghost" onclick="backupData()" style="margin-bottom: 10px;">💾 Backup Data</button>
+                <button class="btn ghost" onclick="restoreData()">📂 Restore Data</button>
+            </div>
+            
+            <div style="margin-bottom: 20px; padding: 12px; background: #ECFDF5; border-left: 4px solid #10B981; border-radius: 8px;">
+                <div style="font-size: 12px; color: #059669; font-weight: 600;">ℹ️ Version 3.0.0</div>
+                <div style="font-size: 11px; color: #047857; margin-top: 4px;">Professional Towel Tracker • Latest Updates</div>
+            </div>
+            
+            <div class="modal-btns" style="margin-top: 20px;">
+                <button class="btn primary" onclick="closeModal('m-settings')" style="width: 100%;">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== MODAL: ANALYTICS ========== -->
+    <div id="m-analytics" class="modal-bg" onclick="closeBg(event,'m-analytics')">
+        <div class="modal-sheet">
+            <div class="modal-handle"></div>
+            <div class="modal-content"></div>
+            <div class="modal-btns" style="margin-top: 20px;">
+                <button class="btn primary" onclick="closeModal('m-analytics')" style="width: 100%;">Close</button>
+            </div>
+        </div>
+    </div>
+
     <!-- TOAST -->
     <div id="toast" class="toast"></div>
 
+    <!-- App Scripts -->
     <script src="app.js"></script>
+    
+    <!-- Export Libraries - Using reliable CDN with fallback -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
+    
+    <!-- Export functionality -->
+    <script src="export.js"></script>
+
+    <!-- Advanced Features (Settings, Analytics, Search, Backup) -->
+    <script src="advanced-features.js"></script>
+
+    <!-- Initialize Advanced Features -->
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            loadSettings();
+            applyDarkMode();
+        });
+    </script>
+    
+    <!-- Service Worker -->
     <script>if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');</script>
 </body>
 </html>
