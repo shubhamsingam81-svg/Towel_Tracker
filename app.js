@@ -119,11 +119,14 @@ window.addEventListener('DOMContentLoaded', () => {
     }, 900);
 });
 
-// ===== NAV =====
+// ===== NAVIGATION & HISTORY MANAGEMENT =====
+let isHandlingPopState = false; // Prevent recursive history pushes
+
 function showScreen(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(id).classList.add('active');
 }
+
 function navTo(screen) {
     switch (screen) {
         case 'parties':
@@ -146,9 +149,79 @@ function navTo(screen) {
             renderEntries();
             break;
     }
+    
+    // Push state to browser history (for back button support)
+    if (!isHandlingPopState) {
+        const state = {
+            screen: screen,
+            curPartyId: curPartyId,
+            curMonthId: curMonthId,
+            curSizeId: curSizeId,
+            timestamp: Date.now()
+        };
+        window.history.pushState(state, '', `#${screen}`);
+    }
 }
 
+// Handle browser back button (including mobile hardware back button)
+window.onpopstate = function(event) {
+    isHandlingPopState = true;
+    
+    // Close any open modals first
+    closeAllModals();
+    
+    if (event.state && event.state.screen) {
+        // Restore navigation state
+        curPartyId = event.state.curPartyId;
+        curMonthId = event.state.curMonthId;
+        curSizeId = event.state.curSizeId;
+        
+        // Show the screen
+        switch (event.state.screen) {
+            case 'parties':
+                showScreen('screen-parties');
+                renderParties();
+                break;
+            case 'months':
+                showScreen('screen-months');
+                renderMonths();
+                break;
+            case 'sizes':
+                showScreen('screen-sizes');
+                renderSizes();
+                break;
+            case 'entries':
+                showScreen('screen-entries');
+                renderEntries();
+                break;
+        }
+    } else {
+        // Go to default screen
+        curPartyId = curMonthId = curSizeId = null;
+        showScreen('screen-parties');
+        renderParties();
+    }
+    
+    isHandlingPopState = false;
+};
+
+// Initialize history on app start
+document.addEventListener('DOMContentLoaded', () => {
+    isHandlingPopState = true;
+    window.history.replaceState({
+        screen: 'parties',
+        curPartyId: null,
+        curMonthId: null,
+        curSizeId: null,
+        timestamp: Date.now()
+    }, '', '#parties');
+    isHandlingPopState = false;
+}, { once: true });
+
 // ===== MODAL =====
+function closeAllModals() {
+    document.querySelectorAll('.modal-bg.open').forEach(m => m.classList.remove('open'));
+}
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 function closeBg(e, id) { if (e.target === e.currentTarget) closeModal(id); }
