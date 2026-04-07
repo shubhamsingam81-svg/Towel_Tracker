@@ -95,9 +95,9 @@ function partyTotal(p) {
     return { pcs, wg, cnt, months };
 }
 function allTotal(data) {
-    let pcs = 0, wg = 0;
-    data.parties.forEach(p => { const t = partyTotal(p); pcs += t.pcs; wg += t.wg; });
-    return { pcs, wg, parties: data.parties.length };
+    let pcs = 0, wg = 0, cnt = 0;
+    data.parties.forEach(p => { const t = partyTotal(p); pcs += t.pcs; wg += t.wg; cnt += t.cnt; });
+    return { pcs, wg, cnt, parties: data.parties.length };
 }
 
 // ===== STATE =====

@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#4F46E5">
+    <meta name="theme-color" content="#5B61FF">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Towel Tracker">
-    <meta name="description" content="Track towel quantity and weight for textile businesses">
-    <title>Towel Tracker</title>
+    <meta name="apple-mobile-web-app-title" content="ItemTracker">
+    <meta name="description" content="Professional inventory & item tracking system">
+    <title>ItemTracker</title>
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧺</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -19,8 +19,8 @@
     <!-- SPLASH -->
     <div id="splash" class="splash">
         <div class="splash-content">
-            <div class="splash-icon">🧺</div>
-            <div class="splash-title">Towel Tracker</div>
+            <div class="splash-icon">📦</div>
+            <div class="splash-title">ItemTracker</div>
             <div class="splash-bar"><div class="splash-bar-fill"></div></div>
         </div>
     </div>
@@ -31,9 +31,15 @@
             <div class="safe-area-top"></div>
             <div class="header-inner">
                 <div class="header-row">
-                    <h1 class="app-title">🧺 Towel Tracker</h1>
+                    <h1 class="app-title">📦 ItemTracker</h1>
+                    <button class="icon-btn white" onclick="openChartsModal()" title="Charts">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M9 17v-5m4 5V9m4 8v-3"/><circle cx="9" cy="8" r="1"/><circle cx="13" cy="5" r="1"/><circle cx="17" cy="6" r="1"/></svg>
+                    </button>
                     <button class="icon-btn white" onclick="openAnalytics()" title="Analytics">
                         <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17V9M13 17v-5M8 17v-3"/></svg>
+                    </button>
+                    <button class="icon-btn white" onclick="openModal('m-customize')" title="Customize Fields">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/><path d="M10 17l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
                     </button>
                     <button class="icon-btn white" onclick="openModal('m-settings')" title="Settings">
                         <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m3.08 3.08l4.24 4.24M1 12h6m6 0h6m-16.78 7.78l4.24-4.24m3.08-3.08l4.24-4.24"/></svg>
@@ -42,7 +48,7 @@
                         <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
                     </button>
                 </div>
-                <p class="header-subtitle">Track quantity & weight for textile parties</p>
+                <p class="header-subtitle">Professional inventory management system</p>
                 <div id="global-stats" class="stats-row hidden">
                     <div class="stat-chip"><span class="stat-chip-val" id="gs-parties">0</span><span class="stat-chip-lbl">Parties</span></div>
                     <div class="stat-chip"><span class="stat-chip-val" id="gs-pcs">0</span><span class="stat-chip-lbl">Total Pcs</span></div>
@@ -345,7 +351,7 @@
             
             <div style="margin-bottom: 20px; padding: 12px; background: #ECFDF5; border-left: 4px solid #10B981; border-radius: 8px;">
                 <div style="font-size: 12px; color: #059669; font-weight: 600;">ℹ️ Version 3.0.0</div>
-                <div style="font-size: 11px; color: #047857; margin-top: 4px;">Professional Towel Tracker • Latest Updates</div>
+                <div style="font-size: 11px; color: #047857; margin-top: 4px;">ItemTracker • Professional Inventory System</div>
             </div>
             
             <div class="modal-btns" style="margin-top: 20px;">
@@ -365,13 +371,76 @@
         </div>
     </div>
 
+    <!-- ========== MODAL: CHARTS/VISUALIZATION ========== -->
+    <div id="m-charts" class="modal-bg" onclick="closeBg(event,'m-charts')">
+        <div class="modal-sheet">
+            <div class="modal-handle"></div>
+            <h2 class="modal-h">📊 Data Visualization</h2>
+            <div class="modal-content" style="max-height: 60vh; overflow-y: auto;">
+                <div style="margin-bottom: 20px;">
+                    <h3 style="color: #5B61FF; margin-bottom: 10px; font-size: 14px;">Inventory by Party</h3>
+                    <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; height: 250px;">
+                        <canvas id="partyChart"></canvas>
+                    </div>
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <h3 style="color: #5B61FF; margin-bottom: 10px; font-size: 14px;">Total Inventory Trend</h3>
+                    <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; height: 250px;">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-btns">
+                <button class="btn primary" onclick="closeModal('m-charts')" style="width: 100%;">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== MODAL: FIELD CUSTOMIZATION ========== -->
+    <div id="m-customize" class="modal-bg" onclick="closeBg(event,'m-customize')">
+        <div class="modal-sheet">
+            <div class="modal-handle"></div>
+            <h2 class="modal-h">⚙️ Customize Fields</h2>
+            <div class="modal-content" style="max-height: 60vh; overflow-y: auto;">
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; color: #666; font-size: 12px; font-weight: bold; margin-bottom: 5px;">Primary Item Name (e.g., "Party")</label>
+                    <input type="text" id="field-party" placeholder="Party" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; color: #666; font-size: 12px; font-weight: bold; margin-bottom: 5px;">Secondary Grouping (e.g., "Month")</label>
+                    <input type="text" id="field-month" placeholder="Month" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; color: #666; font-size: 12px; font-weight: bold; margin-bottom: 5px;">Category/Type (e.g., "Size")</label>
+                    <input type="text" id="field-size" placeholder="Size" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; color: #666; font-size: 12px; font-weight: bold; margin-bottom: 5px;">Quantity Unit (e.g., "Pieces", "Units")</label>
+                    <input type="text" id="field-quantity" placeholder="Pieces" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; color: #666; font-size: 12px; font-weight: bold; margin-bottom: 5px;">Weight Unit (e.g., "Grams", "KG")</label>
+                    <input type="text" id="field-weight" placeholder="Grams" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                </div>
+                <div style="background: #e8eaf6; padding: 10px; border-radius: 4px; font-size: 11px; color: #5B61FF; line-height: 1.5;">
+                    💡 <strong>Tip:</strong> Customize these field names to match your business. Changes apply app-wide.
+                </div>
+            </div>
+            <div class="modal-btns">
+                <button class="btn ghost" onclick="closeModal('m-customize')">Cancel</button>
+                <button class="btn primary" onclick="saveCustomFields()">Save</button>
+            </div>
+        </div>
+    </div>
+
     <!-- TOAST -->
     <div id="toast" class="toast"></div>
 
     <!-- App Scripts -->
     <script src="app.js"></script>
     
-    <!-- Export Libraries - Using reliable CDN with fallback -->
+    <!-- Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
     
@@ -380,6 +449,9 @@
 
     <!-- Advanced Features (Settings, Analytics, Search, Backup) -->
     <script src="advanced-features.js"></script>
+
+    <!-- Customization & Charts -->
+    <script src="customization.js"></script>
 
     <!-- Initialize Advanced Features -->
     <script>
