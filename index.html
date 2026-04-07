@@ -25,14 +25,14 @@
         </div>
     </div>
 
-    <!-- SCREEN: PARTY LIST -->
+    <!-- ========== SCREEN 1: PARTY LIST ========== -->
     <div id="screen-parties" class="screen">
         <header class="header-gradient">
             <div class="safe-area-top"></div>
             <div class="header-inner">
                 <div class="header-row">
                     <h1 class="app-title">🧺 Towel Tracker</h1>
-                    <button class="icon-btn white" onclick="exportAllData()" title="Export">
+                    <button class="icon-btn white" onclick="exportAllData()" title="Export All">
                         <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
                     </button>
                 </div>
@@ -44,7 +44,6 @@
                 </div>
             </div>
         </header>
-
         <div id="search-wrap" class="search-wrap hidden">
             <div class="search-box">
                 <svg class="search-ico" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -52,25 +51,80 @@
                 <button id="search-x" class="search-x hidden" onclick="clearSearch()">✕</button>
             </div>
         </div>
-
         <div id="party-list" class="card-list"></div>
         <button class="fab pulse" onclick="openPartyModal()"><span class="fab-icon">+</span></button>
     </div>
 
-    <!-- SCREEN: ENTRIES -->
+    <!-- ========== SCREEN 2: MONTHS (inside a Party) ========== -->
+    <div id="screen-months" class="screen">
+        <header class="header-gradient">
+            <div class="safe-area-top"></div>
+            <div class="header-inner">
+                <div class="header-row">
+                    <button class="icon-btn white" onclick="navTo('parties')">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                    </button>
+                    <div class="header-title-area">
+                        <h1 class="entry-title" id="month-hdr-name"></h1>
+                        <p class="entry-sub">Select a month</p>
+                    </div>
+                    <button class="icon-btn white" onclick="openPartyModal(true)" title="Edit Party">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>
+                </div>
+                <div id="party-stats" class="stats-row hidden">
+                    <div class="stat-chip"><span class="stat-chip-val" id="ps-months">0</span><span class="stat-chip-lbl">Months</span></div>
+                    <div class="stat-chip"><span class="stat-chip-val" id="ps-pcs">0</span><span class="stat-chip-lbl">Total Pcs</span></div>
+                    <div class="stat-chip"><span class="stat-chip-val" id="ps-wt">0</span><span class="stat-chip-lbl">Total Wt</span></div>
+                </div>
+            </div>
+        </header>
+        <div id="month-list" class="card-list"></div>
+        <button class="fab pulse" onclick="openMonthModal()"><span class="fab-icon">+</span></button>
+    </div>
+
+    <!-- ========== SCREEN 3: SIZES (inside a Month) ========== -->
+    <div id="screen-sizes" class="screen">
+        <header class="header-gradient">
+            <div class="safe-area-top"></div>
+            <div class="header-inner">
+                <div class="header-row">
+                    <button class="icon-btn white" onclick="navTo('months')">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                    </button>
+                    <div class="header-title-area">
+                        <h1 class="entry-title" id="size-hdr-name"></h1>
+                        <p class="entry-sub" id="size-hdr-sub"></p>
+                    </div>
+                    <button class="icon-btn white" onclick="openMonthModal(true)" title="Edit Month">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>
+                </div>
+                <div id="month-stats" class="stats-row hidden">
+                    <div class="stat-chip"><span class="stat-chip-val" id="ms-sizes">0</span><span class="stat-chip-lbl">Sizes</span></div>
+                    <div class="stat-chip"><span class="stat-chip-val" id="ms-pcs">0</span><span class="stat-chip-lbl">Total Pcs</span></div>
+                    <div class="stat-chip"><span class="stat-chip-val" id="ms-wt">0</span><span class="stat-chip-lbl">Total Wt</span></div>
+                </div>
+            </div>
+        </header>
+        <div id="size-list" class="card-list"></div>
+        <button class="fab pulse" onclick="openSizeModal()"><span class="fab-icon">+</span></button>
+    </div>
+
+    <!-- ========== SCREEN 4: ENTRIES (inside a Size) ========== -->
     <div id="screen-entries" class="screen">
         <header class="header-gradient compact">
             <div class="safe-area-top"></div>
             <div class="header-inner">
                 <div class="header-row">
-                    <button class="icon-btn white" onclick="goBack()">
+                    <button class="icon-btn white" onclick="navTo('sizes')">
                         <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
                     </button>
                     <div class="header-title-area">
                         <h1 class="entry-title" id="e-title"></h1>
                         <p class="entry-sub" id="e-sub"></p>
                     </div>
-                    <button class="icon-btn white" onclick="openPartyModal(true)" title="Edit">
+                    <button class="icon-btn white" onclick="openSizeModal(true)" title="Edit Size">
                         <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                     </button>
                     <button class="icon-btn white" onclick="shareReport()" title="Share">
@@ -79,27 +133,11 @@
                 </div>
             </div>
         </header>
-
-        <!-- Totals -->
         <div class="totals-grid">
-            <div class="tcard blue">
-                <div class="tcard-ico">📦</div>
-                <div class="tcard-val" id="t-pcs">0</div>
-                <div class="tcard-lbl">Total Pieces</div>
-            </div>
-            <div class="tcard green">
-                <div class="tcard-ico">⚖️</div>
-                <div class="tcard-val" id="t-wt">0 kg</div>
-                <div class="tcard-lbl">Total Weight</div>
-            </div>
-            <div class="tcard amber">
-                <div class="tcard-ico">📋</div>
-                <div class="tcard-val" id="t-cnt">0</div>
-                <div class="tcard-lbl">Entries</div>
-            </div>
+            <div class="tcard blue"><div class="tcard-ico">📦</div><div class="tcard-val" id="t-pcs">0</div><div class="tcard-lbl">Total Pieces</div></div>
+            <div class="tcard green"><div class="tcard-ico">⚖️</div><div class="tcard-val" id="t-wt">0 kg</div><div class="tcard-lbl">Total Weight</div></div>
+            <div class="tcard amber"><div class="tcard-ico">📋</div><div class="tcard-val" id="t-cnt">0</div><div class="tcard-lbl">Entries</div></div>
         </div>
-
-        <!-- Averages -->
         <div class="avg-bar" id="avg-bar">
             <div class="avg-cell"><span class="avg-lbl">Avg Pcs</span><span class="avg-val" id="a-pcs">—</span></div>
             <div class="avg-sep"></div>
@@ -107,19 +145,16 @@
             <div class="avg-sep"></div>
             <div class="avg-cell"><span class="avg-lbl">Wt/Pc</span><span class="avg-val" id="a-wpc">—</span></div>
         </div>
-
-        <!-- Table -->
         <div class="table-wrap">
             <table class="etable">
-                <thead><tr><th class="th-n">#</th><th class="th-img">Photo</th><th>Pieces</th><th>Weight</th><th class="th-act">Actions</th></tr></thead>
+                <thead><tr><th class="th-n">#</th><th class="th-img">Photo</th><th>Pieces</th><th>Weight</th><th>Wt/Pc</th><th class="th-act">Actions</th></tr></thead>
                 <tbody id="etbody"></tbody>
             </table>
         </div>
-
         <button class="fab pulse" onclick="openEntryModal()"><span class="fab-icon">+</span></button>
     </div>
 
-    <!-- MODAL: PARTY -->
+    <!-- ========== MODAL: PARTY (name only) ========== -->
     <div id="m-party" class="modal-bg" onclick="closeBg(event,'m-party')">
         <div class="modal-sheet">
             <div class="modal-handle"></div>
@@ -127,10 +162,6 @@
             <form id="f-party" onsubmit="saveParty(event)">
                 <label class="lbl">Party Name</label>
                 <div class="igroup"><span class="iico">🏭</span><input type="text" id="ip-name" class="itext" placeholder="e.g. Dhanajay Textile" required autocomplete="off"></div>
-                <label class="lbl">Towel Size</label>
-                <div class="igroup"><span class="iico">📐</span><input type="text" id="ip-size" class="itext" placeholder="e.g. 16x24" required autocomplete="off"></div>
-                <label class="lbl">Date</label>
-                <div class="igroup"><span class="iico">📅</span><input type="date" id="ip-date" class="itext" required></div>
                 <div class="modal-btns">
                     <button type="button" class="btn ghost" onclick="closeModal('m-party')">Cancel</button>
                     <button type="submit" class="btn primary">Save</button>
@@ -139,7 +170,39 @@
         </div>
     </div>
 
-    <!-- MODAL: ENTRY -->
+    <!-- ========== MODAL: MONTH ========== -->
+    <div id="m-month" class="modal-bg" onclick="closeBg(event,'m-month')">
+        <div class="modal-sheet">
+            <div class="modal-handle"></div>
+            <h2 id="m-month-title" class="modal-h">Add Month</h2>
+            <form id="f-month" onsubmit="saveMonth(event)">
+                <label class="lbl">Month</label>
+                <div class="igroup"><span class="iico">📅</span><input type="month" id="im-month" class="itext" required></div>
+                <div class="modal-btns">
+                    <button type="button" class="btn ghost" onclick="closeModal('m-month')">Cancel</button>
+                    <button type="submit" class="btn primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========== MODAL: SIZE ========== -->
+    <div id="m-size" class="modal-bg" onclick="closeBg(event,'m-size')">
+        <div class="modal-sheet">
+            <div class="modal-handle"></div>
+            <h2 id="m-size-title" class="modal-h">Add Towel Size</h2>
+            <form id="f-size" onsubmit="saveSize(event)">
+                <label class="lbl">Towel Size</label>
+                <div class="igroup"><span class="iico">📐</span><input type="text" id="is-size" class="itext" placeholder="e.g. 16x24, 30x60" required autocomplete="off"></div>
+                <div class="modal-btns">
+                    <button type="button" class="btn ghost" onclick="closeModal('m-size')">Cancel</button>
+                    <button type="submit" class="btn primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========== MODAL: ENTRY ========== -->
     <div id="m-entry" class="modal-bg" onclick="closeBg(event,'m-entry')">
         <div class="modal-sheet">
             <div class="modal-handle"></div>
@@ -147,7 +210,6 @@
             <form id="f-entry" onsubmit="saveEntry(event)">
                 <label class="lbl">Number of Pieces</label>
                 <div class="igroup"><span class="iico">📦</span><input type="number" id="ie-pcs" class="itext big" placeholder="e.g. 108" required min="1" inputmode="numeric"><span class="isuffix">pcs</span></div>
-
                 <label class="lbl">Weight</label>
                 <div class="weight-row">
                     <div class="igroup flex1"><span class="iico">⚖️</span><input type="number" id="ie-wt" class="itext big" placeholder="e.g. 19.5" required min="0.001" step="any" inputmode="decimal"></div>
@@ -157,7 +219,6 @@
                     </div>
                 </div>
                 <p class="hint">💡 Supports decimals: 19.5 kg, 11.25 kg, etc.</p>
-
                 <label class="lbl">Photo (optional)</label>
                 <div class="img-input-area">
                     <input type="file" id="ie-img" accept="image/*" capture="environment" class="img-file-input" onchange="onImagePicked(event)">
@@ -170,7 +231,6 @@
                         <button type="button" class="img-remove-btn" id="img-remove-btn" onclick="removeImage(event)">✕</button>
                     </div>
                 </div>
-
                 <label class="lbl">Quick Weight (kg)</label>
                 <div class="presets">
                     <button type="button" class="pchip" onclick="qw(5)">5</button>
@@ -188,7 +248,6 @@
                     <button type="button" class="pchip" onclick="qw(24)">24</button>
                     <button type="button" class="pchip" onclick="qw(25)">25</button>
                 </div>
-
                 <div class="modal-btns">
                     <button type="button" class="btn ghost" onclick="closeModal('m-entry')">Cancel</button>
                     <button type="submit" class="btn primary">Save</button>
@@ -197,7 +256,7 @@
         </div>
     </div>
 
-    <!-- MODAL: DELETE -->
+    <!-- ========== MODAL: DELETE ========== -->
     <div id="m-del" class="modal-bg" onclick="closeBg(event,'m-del')">
         <div class="modal-sheet mini">
             <div class="modal-handle"></div>
@@ -211,7 +270,7 @@
         </div>
     </div>
 
-    <!-- MODAL: IMAGE VIEWER -->
+    <!-- ========== MODAL: IMAGE VIEWER ========== -->
     <div id="m-imgview" class="modal-bg imgview-bg" onclick="closeBg(event,'m-imgview')">
         <div class="imgview-container">
             <button class="imgview-close" onclick="closeModal('m-imgview')">✕</button>
