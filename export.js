@@ -76,29 +76,285 @@ function checkLibraries() {
     return true;
 }
 
-// ===== EXPORT ALL DATA TO EXCEL =====
-function exportAllDataExcel() {
-    if (!checkLibraries()) {
-        toast('⏳ Waiting for libraries...');
-        setTimeout(exportAllDataExcel, 1000);
-        return;
+// ===== STYLING HELPERS FOR EXCELJS =====
+const BRAND_COLOR = '4A50E2';
+const BRAND_DARK = '3539A6';
+const LIGHT_BLUE = 'E8EBF7';
+const LIGHT_BLUE_ALT = 'F4F5FC';
+const BORDER_COLOR = 'D0D5DD';
+const BORDER_DARK = '98A2B3';
+const TOTAL_BG = 'FFF4E5';
+const TOTAL_BORDER = 'F79009';
+const TOTAL_TEXT = 'B54708';
+const TEXT_PRIMARY = '1D2939';
+const TEXT_SECONDARY = '475467';
+const MONTH_BG = 'EEF4FF';
+const MONTH_TEXT = '3538CD';
+const WHITE_COLOR = 'FFFFFF';
+
+function getHeaderFill() {
+    return { type: 'pattern', pattern: 'solid', fgColor: { argb: BRAND_COLOR } };
+}
+
+function getHeaderFont() {
+    return { bold: true, color: { argb: 'FF' + WHITE_COLOR }, size: 11, name: 'Calibri' };
+}
+
+function getTitleFill() {
+    return { type: 'pattern', pattern: 'solid', fgColor: { argb: BRAND_DARK } };
+}
+
+function getTitleFont() {
+    return { bold: true, color: { argb: 'FF' + WHITE_COLOR }, size: 16, name: 'Calibri' };
+}
+
+function getSubheaderFill() {
+    return { type: 'pattern', pattern: 'solid', fgColor: { argb: MONTH_BG } };
+}
+
+function getSubheaderFont() {
+    return { bold: true, color: { argb: 'FF' + MONTH_TEXT }, size: 11, name: 'Calibri' };
+}
+
+function getAlternateRowFill() {
+    return { type: 'pattern', pattern: 'solid', fgColor: { argb: LIGHT_BLUE_ALT } };
+}
+
+function getNumberFont() {
+    return { bold: true, color: { argb: 'FF' + BRAND_COLOR }, size: 10, name: 'Calibri' };
+}
+
+function getNormalFont() {
+    return { size: 10, color: { argb: 'FF' + TEXT_PRIMARY }, name: 'Calibri' };
+}
+
+function getTotalFill() {
+    return { type: 'pattern', pattern: 'solid', fgColor: { argb: TOTAL_BG } };
+}
+
+function getTotalFont() {
+    return { bold: true, color: { argb: 'FF' + TOTAL_TEXT }, size: 11, name: 'Calibri' };
+}
+
+function getBorder() {
+    return {
+        left: { style: 'thin', color: { argb: 'FF' + BORDER_COLOR } },
+        right: { style: 'thin', color: { argb: 'FF' + BORDER_COLOR } },
+        top: { style: 'thin', color: { argb: 'FF' + BORDER_COLOR } },
+        bottom: { style: 'thin', color: { argb: 'FF' + BORDER_COLOR } }
+    };
+}
+
+function getHeaderBorder() {
+    return {
+        left: { style: 'thin', color: { argb: 'FF' + BRAND_DARK } },
+        right: { style: 'thin', color: { argb: 'FF' + BRAND_DARK } },
+        top: { style: 'medium', color: { argb: 'FF' + BRAND_DARK } },
+        bottom: { style: 'medium', color: { argb: 'FF' + BRAND_DARK } }
+    };
+}
+
+function getTotalBorder() {
+    return {
+        left: { style: 'thin', color: { argb: 'FF' + TOTAL_BORDER } },
+        right: { style: 'thin', color: { argb: 'FF' + TOTAL_BORDER } },
+        top: { style: 'double', color: { argb: 'FF' + TOTAL_BORDER } },
+        bottom: { style: 'medium', color: { argb: 'FF' + TOTAL_BORDER } }
+    };
+}
+
+function getCellAlignment() {
+    return { horizontal: 'center', vertical: 'middle', wrapText: true };
+}
+
+function getLeftAlignment() {
+    return { horizontal: 'left', vertical: 'middle', wrapText: true };
+}
+
+function applyTitleRow(sheet, row, colCount) {
+    row.font = getTitleFont();
+    row.fill = getTitleFill();
+    row.alignment = getLeftAlignment();
+    row.height = 36;
+    if (colCount > 1) {
+        sheet.mergeCells(row.number, 1, row.number, colCount);
     }
-    
+}
+
+function applyHeaderRow(row) {
+    row.font = getHeaderFont();
+    row.fill = getHeaderFill();
+    row.alignment = getCellAlignment();
+    row.height = 28;
+    row.eachCell(cell => { 
+        cell.border = getHeaderBorder();
+    });
+}
+
+function applySubheaderRow(row, sheet, colCount) {
+    row.font = getSubheaderFont();
+    row.fill = getSubheaderFill();
+    row.alignment = getLeftAlignment();
+    row.height = 24;
+    if (sheet && colCount > 1) {
+        sheet.mergeCells(row.number, 1, row.number, colCount);
+    }
+    row.eachCell(cell => {
+        cell.border = {
+            bottom: { style: 'thin', color: { argb: 'FF' + MONTH_TEXT } }
+        };
+    });
+}
+
+function applyDataRow(row, isAlternate = false) {
+    if (isAlternate) {
+        row.fill = getAlternateRowFill();
+    }
+    row.alignment = getCellAlignment();
+    row.height = 22;
+    row.eachCell(cell => { 
+        cell.border = getBorder();
+        if (cell.value !== null && cell.value !== undefined && typeof cell.value === 'number') {
+            cell.font = getNumberFont();
+            cell.numFmt = cell.value % 1 !== 0 ? '#,##0.00' : '#,##0';
+        } else {
+            cell.font = getNormalFont();
+        }
+    });
+}
+
+function applyTotalRow(row) {
+    row.font = getTotalFont();
+    row.fill = getTotalFill();
+    row.alignment = getCellAlignment();
+    row.height = 28;
+    row.eachCell(cell => {
+        cell.border = getTotalBorder();
+        if (cell.value !== null && cell.value !== undefined && typeof cell.value === 'number') {
+            cell.numFmt = cell.value % 1 !== 0 ? '#,##0.00' : '#,##0';
+        }
+    });
+}
+
+function applyInfoRow(row) {
+    row.font = { size: 10, color: { argb: 'FF' + TEXT_SECONDARY }, name: 'Calibri', italic: true };
+    row.alignment = getLeftAlignment();
+    row.height = 18;
+}
+
+function applyPrintSetup(sheet) {
+    sheet.pageSetup = {
+        orientation: 'landscape',
+        fitToPage: true,
+        fitToWidth: 1,
+        fitToHeight: 0,
+        margins: { left: 0.4, right: 0.4, top: 0.5, bottom: 0.5, header: 0.3, footer: 0.3 }
+    };
+    sheet.headerFooter = {
+        oddFooter: '&L&8Ravi Singam Report&C&8Page &P of &N&R&8&D'
+    };
+}
+
+// ===== EXPORT DATE PROMPT HELPERS =====
+let pendingExportType = null; // 'party' or 'size'
+
+function getTodayStr() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function fmtClosingDate(dateStr) {
+    if (!dateStr) return '';
+    const d = new Date(dateStr + 'T00:00:00');
+    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+// Called when "Export All" modal opens (set default date)
+const origOpenExportModal = window.openModal;
+// We patch the openModal call for m-export to set default date
+(function() {
+    const origOpen = window.openModal || function(){};
+    window.openModal = function(id) {
+        if (id === 'm-export') {
+            document.getElementById('iexp-close-date').value = getTodayStr();
+        }
+        origOpen(id);
+    };
+})();
+
+// Export loading overlay helpers
+function showExportLoading(msg) {
+    const el = document.getElementById('export-overlay');
+    if (el) {
+        el.querySelector('.export-overlay-text').textContent = msg || 'Generating report...';
+        el.classList.remove('hidden');
+    }
+}
+function hideExportLoading() {
+    const el = document.getElementById('export-overlay');
+    if (el) el.classList.add('hidden');
+}
+
+function doExportAll(format) {
+    const closeDate = document.getElementById('iexp-close-date').value;
+    if (!closeDate) { toast('Please select a delivery date'); return; }
+    closeModal('m-export');
+    if (format === 'excel') exportAllDataExcel(closeDate);
+    else exportAllDataPDF(closeDate);
+}
+
+function openExportDateModal(type) {
+    pendingExportType = type;
+    const titles = { party: '📊 Export Party Report', size: '📊 Export Size Report' };
+    document.getElementById('m-export-date-title').textContent = titles[type] || '📊 Export Report';
+    document.getElementById('iexp-close-date2').value = getTodayStr();
+    openModal('m-export-date');
+}
+
+function doExportWithDate(format) {
+    const closeDate = document.getElementById('iexp-close-date2').value;
+    if (!closeDate) { toast('Please select a delivery date'); return; }
+    closeModal('m-export-date');
+    if (pendingExportType === 'party') {
+        if (format === 'excel') exportPartyExcel(closeDate);
+        else exportPartyPDF(closeDate);
+    } else if (pendingExportType === 'size') {
+        if (format === 'excel') exportSizeExcel(closeDate);
+        else exportSizePDF(closeDate);
+    }
+}
+
+// ===== EXPORT ALL DATA TO EXCEL (USING EXCELJS) =====
+function exportAllDataExcel(closingDate) {
     if (!data || data.parties.length === 0) {
         toast('No data to export');
         return;
     }
 
     try {
-        const workbook = XLSX.utils.book_new();
-        const summaryData = [];
+        showExportLoading('Generating Excel report...');
+        const workbook = new ExcelJS.Workbook();
+        workbook.creator = 'Ravi Singam';
+        workbook.created = new Date();
         
-        summaryData.push(['ItemTracker - COMPLETE INVENTORY REPORT']);
-        summaryData.push(['Generated', new Date().toLocaleString('en-IN')]);
-        summaryData.push(['Report Type', 'Complete Data Export']);
-        summaryData.push(['']);
-        summaryData.push(['EXECUTIVE SUMMARY']);
-        summaryData.push(['Total Parties', data.parties.length]);
+        // Create summary sheet
+        const summarySheet = workbook.addWorksheet('Summary', { properties: { tabColor: { argb: BRAND_COLOR } } });
+        
+        // Title row - merged across all columns
+        let row = summarySheet.addRow(['Ravi Singam - COMPLETE INVENTORY REPORT']);
+        applyTitleRow(summarySheet, row, 7);
+        
+        row = summarySheet.addRow(['Generated: ' + new Date().toLocaleString('en-IN') + '  |  Delivery Date: ' + fmtClosingDate(closingDate)]);
+        applyInfoRow(row);
+        summarySheet.mergeCells(row.number, 1, row.number, 7);
+        
+        summarySheet.addRow([]);
+        
+        // Executive Summary
+        row = summarySheet.addRow(['EXECUTIVE SUMMARY']);
+        applySubheaderRow(row, summarySheet, 7);
+        
+        summarySheet.addRow([]);
         
         let totalPcs = 0, totalWt = 0;
         data.parties.forEach(p => {
@@ -107,98 +363,130 @@ function exportAllDataExcel() {
             totalWt += t.wg;
         });
         
-        summaryData.push(['Total Pieces', totalPcs]);
-        summaryData.push(['Total Weight (kg)', parseFloat((totalWt / 1000).toFixed(2))]);
-        summaryData.push(['Average Weight/Piece (g)', totalPcs > 0 ? parseFloat((totalWt / totalPcs).toFixed(2)) : 0]);
-        summaryData.push(['']);
-        summaryData.push(['PARTY-WISE BREAKDOWN']);
-        summaryData.push(['#', 'Party Name', 'Months', 'Entries', 'Total Pieces', 'Total Weight (kg)', 'Avg Wt/Pc (g)']);
+        // Summary as a nice horizontal card layout
+        row = summarySheet.addRow(['Total Parties', 'Total Pieces', 'Total Weight (kg)', 'Avg Weight/Piece (g)']);
+        row.font = { size: 9, color: { argb: 'FF' + TEXT_SECONDARY }, name: 'Calibri', bold: true };
+        row.alignment = getCellAlignment();
+        row.height = 20;
+        row.eachCell(cell => { cell.border = getBorder(); cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: LIGHT_BLUE } }; });
+        
+        row = summarySheet.addRow([data.parties.length, totalPcs, parseFloat((totalWt / 1000).toFixed(2)), totalPcs > 0 ? parseFloat((totalWt / totalPcs).toFixed(2)) : 0]);
+        row.font = { bold: true, size: 18, color: { argb: 'FF' + BRAND_COLOR }, name: 'Calibri' };
+        row.alignment = getCellAlignment();
+        row.height = 32;
+        row.eachCell(cell => { cell.border = getBorder(); cell.numFmt = '#,##0.00'; });
+        
+        summarySheet.addRow([]);
+        summarySheet.addRow([]);
+        
+        // Party-wise breakdown header
+        row = summarySheet.addRow(['PARTY-WISE BREAKDOWN']);
+        applySubheaderRow(row, summarySheet, 7);
+        
+        row = summarySheet.addRow(['#', 'Party Name', 'Months', 'Entries', 'Total Pieces', 'Total Weight (kg)', 'Avg Wt/Pc (g)']);
+        applyHeaderRow(row);
         
         data.parties.forEach((p, idx) => {
             const t = partyTotal(p);
             const avgWpc = t.pcs > 0 ? parseFloat((t.wg / t.pcs).toFixed(2)) : 0;
-            summaryData.push([
-                idx + 1,
-                p.name,
-                t.months,
-                t.cnt,
-                t.pcs,
-                parseFloat((t.wg / 1000).toFixed(2)),
-                avgWpc
-            ]);
+            row = summarySheet.addRow([idx + 1, p.name, t.months, t.cnt, t.pcs, parseFloat((t.wg / 1000).toFixed(2)), avgWpc]);
+            applyDataRow(row, idx % 2 === 0);
         });
         
-        const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
-        summarySheet['!cols'] = [{ wch: 5 }, { wch: 20 }, { wch: 10 }, { wch: 12 }, { wch: 16 }, { wch: 18 }, { wch: 16 }];
-        XLSX.utils.book_append_sheet(workbook, summarySheet, 'Summary');
+        // Grand total row
+        row = summarySheet.addRow(['', 'GRAND TOTAL', '', data.parties.reduce((s, p) => s + partyTotal(p).cnt, 0), totalPcs, parseFloat((totalWt / 1000).toFixed(2)), totalPcs > 0 ? parseFloat((totalWt / totalPcs).toFixed(2)) : 0]);
+        applyTotalRow(row);
         
-        // Track used sheet names to avoid duplicates
-        const usedSheetNames = new Set(['Summary']);
+        summarySheet.columns = [
+            { width: 6 }, { width: 24 }, { width: 12 }, { width: 12 }, { width: 16 }, { width: 18 }, { width: 16 }
+        ];
         
-        // Detailed sheets for each party
+        summarySheet.views = [{ state: 'frozen', ySplit: 1 }];
+        applyPrintSetup(summarySheet);
+        
+        // Create detailed sheets for each party
+        const usedNames = new Set(['Summary']);
         data.parties.forEach((party, pIdx) => {
-            const detailData = [];
+            const sheetName = getUniqueSheetName(party.name, usedNames, pIdx + 1);
+            const sheet = workbook.addWorksheet(sheetName, { properties: { tabColor: { argb: BRAND_COLOR } } });
             const pt = partyTotal(party);
             
-            detailData.push([`Party ${pIdx + 1} - ${party.name}`]);
-            detailData.push(['Generated', new Date().toLocaleString('en-IN')]);
-            detailData.push(['']);
-            detailData.push(['Party Summary']);
-            detailData.push(['Months', pt.months, 'Entries', pt.cnt]);
-            detailData.push(['Total Pieces', pt.pcs, 'Total Weight (kg)', parseFloat((pt.wg / 1000).toFixed(2))]);
-            detailData.push(['Average Wt per Piece (g)', pt.pcs > 0 ? parseFloat((pt.wg / pt.pcs).toFixed(2)) : 0]);
-            detailData.push(['']);
-            detailData.push(['MONTH-WISE DETAILS']);
+            // Title
+            row = sheet.addRow([`${party.name} - DETAILED REPORT`]);
+            applyTitleRow(sheet, row, 6);
             
+            row = sheet.addRow(['Generated: ' + new Date().toLocaleString('en-IN') + '  |  Delivery Date: ' + fmtClosingDate(closingDate)]);
+            applyInfoRow(row);
+            sheet.mergeCells(row.number, 1, row.number, 6);
+            
+            sheet.addRow([]);
+            
+            // Party summary
+            row = sheet.addRow(['Party Summary']);
+            applySubheaderRow(row, sheet, 6);
+            
+            let summaryRows = [
+                ['Total Months', pt.months, 'Total Entries', pt.cnt, 'Total Pieces', pt.pcs],
+                ['Total Weight (kg)', parseFloat((pt.wg / 1000).toFixed(2)), 'Avg Wt/Pc (g)', pt.pcs > 0 ? parseFloat((pt.wg / pt.pcs).toFixed(2)) : 0]
+            ];
+            
+            summaryRows.forEach((d, idx) => {
+                row = sheet.addRow(d);
+                applyDataRow(row, idx % 2 === 0);
+            });
+            
+            sheet.addRow([]);
+            
+            // Month-wise details
             party.months.forEach((month, mIdx) => {
                 const mt = monthTotal(month);
-                detailData.push([`Month ${mIdx + 1} - ${month.name}`]);
-                detailData.push(['Size', 'Pieces', 'Weight (g)', 'Weight (kg)', 'Count', 'Wt/Piece (g)']);
                 
-                month.sizes.forEach(size => {
+                const monthDateStr = month.date ? '  (' + fmtClosingDate(month.date) + ')' : '';
+                row = sheet.addRow([`📅 Month ${mIdx + 1} - ${month.name}${monthDateStr}`]);
+                applySubheaderRow(row, sheet, 6);
+                
+                row = sheet.addRow(['Size', 'Expected/Pc', 'Pieces', 'Weight (kg)', 'Count', 'Avg Wt/Pc']);
+                applyHeaderRow(row);
+                
+                month.sizes.forEach((size, sIdx) => {
                     const st = sizeTotal(size);
                     const wpc = st.pcs > 0 ? parseFloat((st.wg / st.pcs).toFixed(2)) : 0;
-                    detailData.push([
-                        size.name,
-                        st.pcs,
-                        st.wg,
-                        parseFloat((st.wg / 1000).toFixed(3)),
-                        st.cnt,
-                        wpc
-                    ]);
+                    row = sheet.addRow([size.name, size.expectedGrams || 0, st.pcs, parseFloat((st.wg / 1000).toFixed(3)), st.cnt, wpc]);
+                    applyDataRow(row, sIdx % 2 === 0);
                 });
                 
                 const mtAvg = mt.pcs > 0 ? parseFloat((mt.wg / mt.pcs).toFixed(2)) : 0;
-                detailData.push(['MONTH TOTAL', mt.pcs, mt.wg, parseFloat((mt.wg / 1000).toFixed(3)), mt.cnt, mtAvg]);
-                detailData.push(['']);
+                row = sheet.addRow(['MONTH TOTAL', '', mt.pcs, parseFloat((mt.wg / 1000).toFixed(3)), mt.cnt, mtAvg]);
+                applyTotalRow(row);
+                sheet.addRow([]);
             });
             
+            // Party total
             const ptAvg = pt.pcs > 0 ? parseFloat((pt.wg / pt.pcs).toFixed(2)) : 0;
-            detailData.push(['PARTY TOTAL', pt.pcs, pt.wg, parseFloat((pt.wg / 1000).toFixed(3)), pt.cnt, ptAvg]);
+            row = sheet.addRow(['PARTY TOTAL', '', pt.pcs, parseFloat((pt.wg / 1000).toFixed(3)), pt.cnt, ptAvg]);
+            applyTotalRow(row);
             
-            const sheet = XLSX.utils.aoa_to_sheet(detailData);
-            sheet['!cols'] = [{ wch: 22 }, { wch: 12 }, { wch: 14 }, { wch: 14 }, { wch: 10 }, { wch: 14 }];
-            const sheetName = getUniqueSheetName(party.name, usedSheetNames, pIdx + 1);
-            XLSX.utils.book_append_sheet(workbook, sheet, sheetName);
+            sheet.columns = [{ width: 24 }, { width: 14 }, { width: 14 }, { width: 16 }, { width: 12 }, { width: 16 }];
+            sheet.views = [{ state: 'frozen', ySplit: 1 }];
+            applyPrintSetup(sheet);
         });
         
         const fileName = `TowelTracker_${new Date().toISOString().split('T')[0]}.xlsx`;
-        XLSX.writeFile(workbook, fileName);
-        toast('✓ Excel exported successfully');
+        workbook.xlsx.writeBuffer().then(buffer => {
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            saveAs(blob, fileName);
+            hideExportLoading();
+            toast('u{2713} Excel exported successfully');
+        }).catch(err => { hideExportLoading(); toast('Error: ' + err.message); });
     } catch (error) {
+        hideExportLoading();
         console.error('Export Excel Error:', error);
         toast('Error: ' + error.message);
     }
 }
 
 // ===== EXPORT SINGLE PARTY TO EXCEL =====
-function exportPartyExcel() {
-    if (!checkLibraries()) {
-        toast('⏳ Waiting for libraries...');
-        setTimeout(exportPartyExcel, 1000);
-        return;
-    }
-    
+function exportPartyExcel(closingDate) {
     const party = getParty();
     if (!party) {
         toast('Select a party first');
@@ -206,73 +494,91 @@ function exportPartyExcel() {
     }
 
     try {
-        const workbook = XLSX.utils.book_new();
-        const detailData = [];
-        
+        showExportLoading('Generating party report...');
+        const workbook = new ExcelJS.Workbook();
+        workbook.creator = 'Ravi Singam';
+        workbook.created = new Date();
+        const sheet = workbook.addWorksheet('Party Details', { properties: { tabColor: { argb: BRAND_COLOR } } });
         const pt = partyTotal(party);
         
-        detailData.push(['ItemTracker - PARTY DETAILED REPORT']);
-        detailData.push(['Party Name', party.name]);
-        detailData.push(['Generated', new Date().toLocaleString('en-IN')]);
-        detailData.push(['']);
-        detailData.push(['PARTY SUMMARY METRICS']);
-        detailData.push(['Metric', 'Value']);
-        detailData.push(['Total Months', pt.months]);
-        detailData.push(['Total Entries', pt.cnt]);
-        detailData.push(['Total Pieces', pt.pcs]);
-        detailData.push(['Total Weight (kg)', parseFloat((pt.wg / 1000).toFixed(2))]);
-        detailData.push(['Average Weight per Piece (g)', pt.pcs > 0 ? parseFloat((pt.wg / pt.pcs).toFixed(2)) : 0]);
-        detailData.push(['']);
-        detailData.push(['MONTH-WISE BREAKDOWN']);
+        // Title
+        let row = sheet.addRow([`${party.name} - DETAILED REPORT`]);
+        applyTitleRow(sheet, row, 6);
         
+        row = sheet.addRow(['Generated: ' + new Date().toLocaleString('en-IN') + '  |  Delivery Date: ' + fmtClosingDate(closingDate)]);
+        applyInfoRow(row);
+        sheet.mergeCells(row.number, 1, row.number, 6);
+        
+        sheet.addRow([]);
+        
+        // Party summary - horizontal card style
+        row = sheet.addRow(['Party Summary']);
+        applySubheaderRow(row, sheet, 6);
+        
+        row = sheet.addRow(['Total Months', 'Total Entries', 'Total Pieces', 'Total Weight (kg)', 'Avg Wt/Pc (g)']);
+        row.font = { size: 9, color: { argb: 'FF' + TEXT_SECONDARY }, name: 'Calibri', bold: true };
+        row.alignment = getCellAlignment();
+        row.height = 20;
+        row.eachCell(cell => { cell.border = getBorder(); cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: LIGHT_BLUE } }; });
+        
+        row = sheet.addRow([pt.months, pt.cnt, pt.pcs, parseFloat((pt.wg / 1000).toFixed(2)), pt.pcs > 0 ? parseFloat((pt.wg / pt.pcs).toFixed(2)) : 0]);
+        row.font = { bold: true, size: 16, color: { argb: 'FF' + BRAND_COLOR }, name: 'Calibri' };
+        row.alignment = getCellAlignment();
+        row.height = 30;
+        row.eachCell(cell => { cell.border = getBorder(); if (typeof cell.value === 'number') cell.numFmt = '#,##0.00'; });
+        
+        sheet.addRow([]);
+        
+        // Month-wise details
         party.months.forEach((month, mIdx) => {
             const mt = monthTotal(month);
-            detailData.push([`Month ${mIdx + 1} - ${month.name}`]);
-            detailData.push(['Size', 'Pieces', 'Weight (g)', 'Weight (kg)', 'Count', 'Avg Wt/Pc']);
             
-            month.sizes.forEach(size => {
+            const monthDateStr2 = month.date ? '  (' + fmtClosingDate(month.date) + ')' : '';
+            row = sheet.addRow([`📅 Month ${mIdx + 1} - ${month.name}${monthDateStr2}`]);
+            applySubheaderRow(row, sheet, 6);
+            
+            row = sheet.addRow(['Size', 'Expected/Pc', 'Pieces', 'Weight (kg)', 'Count', 'Avg Wt/Pc']);
+            applyHeaderRow(row);
+            
+            month.sizes.forEach((size, sIdx) => {
                 const st = sizeTotal(size);
                 const avgWpc = st.pcs > 0 ? parseFloat((st.wg / st.pcs).toFixed(2)) : 0;
-                detailData.push([
-                    size.name,
-                    st.pcs,
-                    st.wg,
-                    parseFloat((st.wg / 1000).toFixed(3)),
-                    st.cnt,
-                    avgWpc
-                ]);
+                row = sheet.addRow([size.name, size.expectedGrams || 0, st.pcs, parseFloat((st.wg / 1000).toFixed(3)), st.cnt, avgWpc]);
+                applyDataRow(row, sIdx % 2 === 0);
             });
             
             const avgWpc = mt.pcs > 0 ? parseFloat((mt.wg / mt.pcs).toFixed(2)) : 0;
-            detailData.push(['Month Total', mt.pcs, mt.wg, parseFloat((mt.wg / 1000).toFixed(3)), mt.cnt, avgWpc]);
-            detailData.push(['']);
+            row = sheet.addRow(['MONTH TOTAL', '', mt.pcs, parseFloat((mt.wg / 1000).toFixed(3)), mt.cnt, avgWpc]);
+            applyTotalRow(row);
+            
+            sheet.addRow([]);
         });
         
-        const avgWpc = pt.pcs > 0 ? parseFloat((pt.wg / pt.pcs).toFixed(2)) : 0;
-        detailData.push(['GRAND TOTAL', pt.pcs, pt.wg, parseFloat((pt.wg / 1000).toFixed(3)), pt.cnt, avgWpc]);
+        // Party total
+        const avgWpc2 = pt.pcs > 0 ? parseFloat((pt.wg / pt.pcs).toFixed(2)) : 0;
+        row = sheet.addRow(['PARTY TOTAL', '', pt.pcs, parseFloat((pt.wg / 1000).toFixed(3)), pt.cnt, avgWpc2]);
+        applyTotalRow(row);
         
-        const sheet = XLSX.utils.aoa_to_sheet(detailData);
-        sheet['!cols'] = [{ wch: 22 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 10 }, { wch: 14 }];
-        const sheetName = getValidSheetName(party.name);
-        XLSX.utils.book_append_sheet(workbook, sheet, sheetName);
+        sheet.columns = [{ width: 24 }, { width: 14 }, { width: 14 }, { width: 16 }, { width: 12 }, { width: 16 }];
+        sheet.views = [{ state: 'frozen', ySplit: 1 }];
+        applyPrintSetup(sheet);
         
         const fileName = `${party.name}_Detailed_Report_${new Date().toISOString().split('T')[0]}.xlsx`;
-        XLSX.writeFile(workbook, fileName);
-        toast('✓ Party report exported to Excel');
+        workbook.xlsx.writeBuffer().then(buffer => {
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            saveAs(blob, fileName);
+            hideExportLoading();
+            toast('u{2713} Party report exported to Excel');
+        }).catch(err => { hideExportLoading(); toast('Error: ' + err.message); });
     } catch (error) {
+        hideExportLoading();
         console.error('Export Error:', error);
         toast('Error: ' + error.message);
     }
 }
 
 // ===== EXPORT SIZE DATA TO EXCEL =====
-function exportSizeExcel() {
-    if (!checkLibraries()) {
-        toast('⏳ Waiting for libraries...');
-        setTimeout(exportSizeExcel, 1000);
-        return;
-    }
-    
+function exportSizeExcel(closingDate) {
     const party = getParty();
     const month = getMonth();
     const size = getSize();
@@ -283,59 +589,88 @@ function exportSizeExcel() {
     }
 
     try {
+        showExportLoading('Generating size report...');
+        const workbook = new ExcelJS.Workbook();
+        workbook.creator = 'Ravi Singam';
+        workbook.created = new Date();
+        const sheet = workbook.addWorksheet('Size Details', { properties: { tabColor: { argb: BRAND_COLOR } } });
         const st = sizeTotal(size);
-        const wb = XLSX.utils.book_new();
-        const data_arr = [];
         
-        data_arr.push(['ItemTracker - DETAILED ENTRY REPORT']);
-        data_arr.push(['']);
-        data_arr.push(['Party', party.name, 'Month', month.name, 'Size', size.name]);
-        data_arr.push(['Generated', new Date().toLocaleString('en-IN')]);
-        data_arr.push(['']);
-        data_arr.push(['SUMMARY STATISTICS']);
-        data_arr.push(['Metric', 'Value']);
-        data_arr.push(['Total Entries', st.cnt]);
-        data_arr.push(['Total Pieces', st.pcs]);
-        data_arr.push(['Total Weight (g)', st.wg]);
-        data_arr.push(['Total Weight (kg)', parseFloat((st.wg / 1000).toFixed(2))]);
-        data_arr.push(['Average Pieces/Entry', st.cnt > 0 ? parseFloat((st.pcs / st.cnt).toFixed(2)) : 0]);
-        data_arr.push(['Average Weight/Entry (g)', st.cnt > 0 ? parseFloat((st.wg / st.cnt).toFixed(2)) : 0]);
-        data_arr.push(['Average Weight/Piece (g)', st.pcs > 0 ? parseFloat((st.wg / st.pcs).toFixed(2)) : 0]);
-        data_arr.push(['']);
-        data_arr.push(['ENTRY-BY-ENTRY DETAILS']);
-        data_arr.push(['#', 'Pieces', 'Weight (g)', 'Weight (kg)', 'Wt/Piece (g)']);
+        // Title
+        let row = sheet.addRow([`${size.name} - SIZE DETAILS`]);
+        applyTitleRow(sheet, row, 5);
+        
+        const monthDateDisp = month.date ? ' (' + fmtClosingDate(month.date) + ')' : '';
+        row = sheet.addRow(['Party: ' + party.name + '  |  Month: ' + month.name + monthDateDisp + '  |  Delivery Date: ' + fmtClosingDate(closingDate) + '  |  Size: ' + size.name]);
+        applyInfoRow(row);
+        sheet.mergeCells(row.number, 1, row.number, 5);
+        
+        sheet.addRow([]);
+        
+        // Summary statistics - horizontal card style
+        row = sheet.addRow(['SUMMARY']);
+        applySubheaderRow(row, sheet, 4);
+        
+        row = sheet.addRow(['Expected/Pc (g)', 'Total Entries', 'Total Pieces', 'Total Weight (kg)', 'Avg Wt/Pc (g)']);
+        row.font = { size: 9, color: { argb: 'FF' + TEXT_SECONDARY }, name: 'Calibri', bold: true };
+        row.alignment = getCellAlignment();
+        row.height = 20;
+        row.eachCell(cell => { cell.border = getBorder(); cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: LIGHT_BLUE } }; });
+        
+        const avgWpc = st.pcs > 0 ? parseFloat((st.wg / st.pcs).toFixed(2)) : 0;
+        const expectedG = size.expectedGrams || 0;
+        
+        row = sheet.addRow([expectedG, st.cnt, st.pcs, parseFloat((st.wg / 1000).toFixed(2)), avgWpc]);
+        row.font = { bold: true, size: 16, color: { argb: 'FF' + BRAND_COLOR }, name: 'Calibri' };
+        row.alignment = getCellAlignment();
+        row.height = 30;
+        row.eachCell((cell) => {
+            cell.border = getBorder();
+            if (typeof cell.value === 'number') cell.numFmt = '#,##0.00';
+        });
+        
+        sheet.addRow([]);
+        
+        // Entry details
+        row = sheet.addRow(['ENTRY-BY-ENTRY DETAILS']);
+        applySubheaderRow(row, sheet, 5);
+        
+        row = sheet.addRow(['#', 'Pieces', 'Weight (kg)', 'Wt/Piece (g)']);
+        applyHeaderRow(row);
         
         size.entries.forEach((entry, idx) => {
             const wpc = entry.pcs > 0 ? parseFloat((entry.wg / entry.pcs).toFixed(2)) : 0;
-            data_arr.push([idx + 1, entry.pcs, entry.wg, parseFloat((entry.wg / 1000).toFixed(3)), wpc]);
+            row = sheet.addRow([idx + 1, entry.pcs, parseFloat((entry.wg / 1000).toFixed(3)), wpc]);
+            applyDataRow(row, idx % 2 === 0);
         });
         
-        data_arr.push(['']);
-        const totalWpc = st.pcs > 0 ? parseFloat((st.wg / st.pcs).toFixed(2)) : 0;
-        data_arr.push(['TOTAL', st.pcs, st.wg, parseFloat((st.wg / 1000).toFixed(3)), totalWpc]);
+        sheet.addRow([]);
         
-        const ws = XLSX.utils.aoa_to_sheet(data_arr);
-        ws['!cols'] = [{ wch: 8 }, { wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
-        const sheetName = getValidSheetName(size.name);
-        XLSX.utils.book_append_sheet(wb, ws, sheetName);
+        // Total row
+        const totalWpc = st.pcs > 0 ? parseFloat((st.wg / st.pcs).toFixed(2)) : 0;
+        row = sheet.addRow(['TOTAL', st.pcs, parseFloat((st.wg / 1000).toFixed(3)), totalWpc]);
+        applyTotalRow(row);
+        
+        sheet.columns = [{ width: 10 }, { width: 14 }, { width: 16 }, { width: 16 }];
+        sheet.views = [{ state: 'frozen', ySplit: 1 }];
+        applyPrintSetup(sheet);
         
         const fileName = `${party.name}_${month.name}_${size.name}_${new Date().toISOString().split('T')[0]}.xlsx`;
-        XLSX.writeFile(wb, fileName);
-        toast('✓ Size report exported to Excel');
+        workbook.xlsx.writeBuffer().then(buffer => {
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            saveAs(blob, fileName);
+            hideExportLoading();
+            toast('u{2713} Size report exported to Excel');
+        }).catch(err => { hideExportLoading(); toast('Error: ' + err.message); });
     } catch (error) {
+        hideExportLoading();
         console.error('Export Error:', error);
         toast('Error: ' + error.message);
     }
 }
 
 // ===== EXPORT ALL DATA TO PDF =====
-function exportAllDataPDF() {
-    if (!checkLibraries()) {
-        toast('⏳ Waiting for libraries...');
-        setTimeout(exportAllDataPDF, 1000);
-        return;
-    }
-    
+function exportAllDataPDF(closingDate) {
     if (!data || data.parties.length === 0) {
         toast('No data to export');
         return;
@@ -343,7 +678,7 @@ function exportAllDataPDF() {
 
     try {
         console.log('Starting PDF export for all data...');
-        toast('⏳ Generating PDF... Please wait');
+        showExportLoading('Generating PDF report...');
         
         let html = `<html>
             <head>
@@ -366,8 +701,8 @@ function exportAllDataPDF() {
             </head>
             <body>
                 <div class="header">
-                    <h1>ItemTracker</h1>
-                    <p>Complete Data Report - ${new Date().toLocaleDateString('en-IN')}</p>
+                    <h1>Ravi Singam</h1>
+                    <p>Complete Data Report - ${new Date().toLocaleDateString('en-IN')}  |  Delivery Date: ${fmtClosingDate(closingDate)}</p>
                 </div>
         `;
         
@@ -422,7 +757,7 @@ function exportAllDataPDF() {
         html += `</table></body></html>`;
         
         // Generate PDF without creating DOM element
-        const filename = `ItemTracker_Report_${new Date().toISOString().split('T')[0]}.pdf`;
+        const filename = `RaviSingam_Report_${new Date().toISOString().split('T')[0]}.pdf`;
         const opt = {
             margin: 8,
             filename: filename,
@@ -441,32 +776,30 @@ function exportAllDataPDF() {
                     .save()
                     .then(() => {
                         console.log('PDF saved');
-                        toast('✓ PDF exported');
+                        hideExportLoading();
+                        toast('u{2713} PDF exported');
                     })
                     .catch(err => {
                         console.error('PDF error:', err);
+                        hideExportLoading();
                         toast('Error: ' + (err.message || 'Failed'));
                     });
             } catch (error) {
                 console.error('Error:', error);
+                hideExportLoading();
                 toast('Error: ' + error.message);
             }
         });
         
     } catch (error) {
+        hideExportLoading();
         console.error('PDF Error:', error);
         toast('Error generating PDF');
     }
 }
 
 // ===== EXPORT PARTY TO PDF =====
-function exportPartyPDF() {
-    if (!checkLibraries()) {
-        toast('⏳ Waiting for libraries...');
-        setTimeout(exportPartyPDF, 1000);
-        return;
-    }
-    
+function exportPartyPDF(closingDate) {
     const party = getParty();
     if (!party) {
         toast('Select a party first');
@@ -474,6 +807,7 @@ function exportPartyPDF() {
     }
 
     try {
+        showExportLoading('Generating party PDF...');
         const pt = partyTotal(party);
         const element = document.createElement('div');
         
@@ -508,9 +842,9 @@ function exportPartyPDF() {
             </head>
             <body>
                 <div class="header">
-                    <h1>📦 ItemTracker</h1>
+                    <h1>📦 Ravi Singam</h1>
                     <h2>${escHtml(party.name)}</h2>
-                    <div class="date">Generated: ${new Date().toLocaleString('en-IN')}</div>
+                    <div class="date">Generated: ${new Date().toLocaleString('en-IN')}  |  Delivery Date: ${fmtClosingDate(closingDate)}</div>
                 </div>
                 
                 <div class="summary-grid">
@@ -537,9 +871,9 @@ function exportPartyPDF() {
             const mt = monthTotal(month);
             html += `
                 <div class="month-section">
-                    <h3>📅 Month ${mIdx + 1}: ${escHtml(month.name)}</h3>
+                    <h3>📅 Month ${mIdx + 1}: ${escHtml(month.name)}${month.date ? ' (' + fmtClosingDate(month.date) + ')' : ''}</h3>
                     <table>
-                        <tr><th>Size</th><th style="text-align: center;">Pcs</th><th style="text-align: center;">Weight (g)</th><th style="text-align: center;">Count</th><th style="text-align: right;">Avg Wt/Pc</th></tr>
+                        <tr><th>Size</th><th style="text-align: center;">Expected/Pc</th><th style="text-align: center;">Pcs</th><th style="text-align: center;">Weight (kg)</th><th style="text-align: center;">Count</th><th style="text-align: right;">Avg Wt/Pc</th></tr>
             `;
             
             month.sizes.forEach(size => {
@@ -548,8 +882,9 @@ function exportPartyPDF() {
                 html += `
                         <tr>
                             <td><strong>${escHtml(size.name)}</strong></td>
+                            <td style="text-align: center;">${size.expectedGrams || '-'}</td>
                             <td style="text-align: center;">${st.pcs}</td>
-                            <td style="text-align: center;">${st.wg}</td>
+                            <td style="text-align: center;">${(st.wg / 1000).toFixed(3)}</td>
                             <td style="text-align: center;">${st.cnt}</td>
                             <td style="text-align: right; font-weight: 600;">${wpc}g</td>
                         </tr>
@@ -560,8 +895,9 @@ function exportPartyPDF() {
             html += `
                         <tr class="total-row">
                             <td>Month Total</td>
+                            <td style="text-align: center;">-</td>
                             <td style="text-align: center;">${mt.pcs}</td>
-                            <td style="text-align: center;">${mt.wg}</td>
+                            <td style="text-align: center;">${(mt.wg / 1000).toFixed(3)}</td>
                             <td style="text-align: center;">${mt.cnt}</td>
                             <td style="text-align: right;">${mtWpc}g</td>
                         </tr>
@@ -585,30 +921,28 @@ function exportPartyPDF() {
             try {
                 const pdf = html2pdf().set(opt).from(element);
                 pdf.save().then(() => {
-                    toast('✓ Party report exported to PDF');
+                    hideExportLoading();
+                    toast('u{2713} Party report exported to PDF');
                 }).catch(err => {
+                    hideExportLoading();
                     console.error('PDF save error:', err);
                     toast('Error saving PDF: ' + (err.message || 'Unknown error'));
                 });
             } catch (error) {
+                hideExportLoading();
                 console.error('PDF generation error:', error);
                 toast('Error generating PDF');
             }
         }, 300);
     } catch (error) {
+        hideExportLoading();
         console.error('PDF Error:', error);
         toast('Error: ' + error.message);
     }
 }
 
 // ===== EXPORT SIZE DATA TO PDF =====
-function exportSizePDF() {
-    if (!checkLibraries()) {
-        toast('⏳ Waiting for libraries...');
-        setTimeout(exportSizePDF, 1000);
-        return;
-    }
-    
+function exportSizePDF(closingDate) {
     const party = getParty();
     const month = getMonth();
     const size = getSize();
@@ -619,6 +953,7 @@ function exportSizePDF() {
     }
 
     try {
+        showExportLoading('Generating size PDF...');
         const st = sizeTotal(size);
         const element = document.createElement('div');
         
@@ -639,7 +974,7 @@ function exportSizePDF() {
                     
                     .breadcrumb { font-size: 11px; color: #64748b; margin-bottom: 15px; }
                     
-                    .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+                    .summary-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 20px; }
                     .summary-card { background: white; padding: 12px; border-radius: 6px; border-left: 4px solid #5B61FF; box-shadow: 0 2px 4px rgba(0,0,0,0.06); text-align: center; }
                     .summary-card .label { font-size: 10px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; }
                     .summary-card .value { font-size: 18px; font-weight: 700; color: #5B61FF; margin-top: 4px; }
@@ -660,17 +995,22 @@ function exportSizePDF() {
             </head>
             <body>
                 <div class="header">
-                    <h1>📦 ItemTracker</h1>
+                    <h1>📦 Ravi Singam</h1>
                     <div class="subtitle">Entry-wise Detailed Report</div>
                 </div>
                 
                 <div class="breadcrumb">
                     <strong>Party:</strong> ${escHtml(party.name)} &nbsp; | &nbsp; 
-                    <strong>Month:</strong> ${escHtml(month.name)} &nbsp; | &nbsp; 
+                    <strong>Month:</strong> ${escHtml(month.name)}${month.date ? ' (' + fmtClosingDate(month.date) + ')' : ''} &nbsp; | &nbsp; 
+                    <strong>Delivery Date:</strong> ${fmtClosingDate(closingDate)} &nbsp; | &nbsp; 
                     <strong>Size:</strong> ${escHtml(size.name)}
                 </div>
                 
                 <div class="summary-grid">
+                    <div class="summary-card">
+                        <div class="label">Expected/Pc</div>
+                        <div class="value">${size.expectedGrams || '-'}<span style="font-size: 12px;">g</span></div>
+                    </div>
                     <div class="summary-card">
                         <div class="label">Total Entries</div>
                         <div class="value">${st.cnt}</div>
@@ -691,12 +1031,12 @@ function exportSizePDF() {
                 
                 <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px;">
                     <div class="stat-box">📊 <strong>Avg Pcs/Entry:</strong> ${avgPcs}</div>
-                    <div class="stat-box">⚖️ <strong>Avg Wt/Entry:</strong> ${avgWt}g</div>
+                    <div class="stat-box">⚖️ <strong>Avg Wt/Entry:</strong> ${avgWt}g</div>
                 </div>
                 
                 <h2>📋 Entry-by-Entry Details</h2>
                 <table>
-                    <tr><th>#</th><th>Pieces</th><th>Weight (g)</th><th>Weight (kg)</th><th>Wt/Piece</th></tr>
+                    <tr><th>#</th><th>Pieces</th><th>Weight (kg)</th><th>Wt/Piece</th></tr>
         `;
         
         size.entries.forEach((entry, idx) => {
@@ -705,7 +1045,6 @@ function exportSizePDF() {
                     <tr>
                         <td style="font-weight: 700; color: #5B61FF;">${idx + 1}</td>
                         <td>${entry.pcs}</td>
-                        <td>${entry.wg}</td>
                         <td>${(entry.wg / 1000).toFixed(3)}</td>
                         <td style="font-weight: 600;">${wpc_entry}g</td>
                     </tr>
@@ -716,7 +1055,6 @@ function exportSizePDF() {
                     <tr class="total-row">
                         <td>TOTAL</td>
                         <td>${st.pcs}</td>
-                        <td>${st.wg}</td>
                         <td>${(st.wg / 1000).toFixed(3)}</td>
                         <td>${wpc}g</td>
                     </tr>
@@ -743,17 +1081,21 @@ function exportSizePDF() {
             try {
                 const pdf = html2pdf().set(opt).from(element);
                 pdf.save().then(() => {
-                    toast('✓ Size report exported to PDF');
+                    hideExportLoading();
+                    toast('u{2713} Size report exported to PDF');
                 }).catch(err => {
+                    hideExportLoading();
                     console.error('PDF save error:', err);
                     toast('Error saving PDF: ' + (err.message || 'Unknown error'));
                 });
             } catch (error) {
+                hideExportLoading();
                 console.error('PDF generation error:', error);
                 toast('Error generating PDF');
             }
         }, 300);
     } catch (error) {
+        hideExportLoading();
         console.error('PDF Error:', error);
         toast('Error: ' + error.message);
     }

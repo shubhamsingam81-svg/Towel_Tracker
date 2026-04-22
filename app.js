@@ -30,6 +30,7 @@ function migrate(old) {
                 sizes: [{
                     id: genId(),
                     name: sizeName,
+                    expectedGrams: 0,
                     entries: (op.entries || []).map(e => ({
                         pcs: e.pcs,
                         wg: e.wg || e.weightGrams || 0,
@@ -60,6 +61,11 @@ function fmtMonthInput(s) {
     const [y, m] = s.split('-');
     const d = new Date(parseInt(y), parseInt(m) - 1);
     return d.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
+}
+function fmtDate(s) {
+    if (!s) return '';
+    const d = new Date(s + 'T00:00:00');
+    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 function toGrams(val, unit) { return unit === 'kg' ? Math.round(val * 1000) : Math.round(val); }
 function fmtWt(g) {
@@ -231,6 +237,21 @@ function toast(msg) {
     t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 2200);
 }
+let undoTimer = null;
+function toastUndo(msg, undoFn) {
+    const t = document.getElementById('toast');
+    t.innerHTML = escHtml(msg) + ' <button onclick="event.stopPropagation();doUndo()" style="margin-left:10px;background:#fff;color:#5B61FF;border:none;border-radius:12px;padding:4px 14px;font-weight:700;font-size:13px;cursor:pointer">Undo</button>';
+    t.classList.add('show');
+    if (undoTimer) clearTimeout(undoTimer);
+    window._undoFn = undoFn;
+    undoTimer = setTimeout(() => { t.classList.remove('show'); window._undoFn = null; }, 5000);
+}
+function doUndo() {
+    if (window._undoFn) { window._undoFn(); window._undoFn = null; }
+    if (undoTimer) clearTimeout(undoTimer);
+    const t = document.getElementById('toast'); t.classList.remove('show');
+    toast('↩️ Undo successful');
+}
 function confirmDel(msg, onOk) {
     document.getElementById('del-msg').textContent = msg;
     document.getElementById('btn-del-ok').onclick = onOk;
@@ -241,6 +262,14 @@ function confirmDel(msg, onOk) {
 function getParty() { return data.parties.find(p => p.id === curPartyId); }
 function getMonth() { const p = getParty(); return p ? p.months.find(m => m.id === curMonthId) : null; }
 function getSize() { const m = getMonth(); return m ? m.sizes.find(s => s.id === curSizeId) : null; }
+
+// ===== CUSTOM FIELD LABELS =====
+function F() {
+    try {
+        const s = localStorage.getItem('itemtracker_custom_fields');
+        return s ? JSON.parse(s) : { party: 'Party', month: 'Month', size: 'Size', quantity: 'Pieces', weight: 'Grams' };
+    } catch { return { party: 'Party', month: 'Month', size: 'Size', quantity: 'Pieces', weight: 'Grams' }; }
+}
 
 // =================================================================
 // SCREEN 1: PARTIES
@@ -260,13 +289,18 @@ function renderParties() {
         document.getElementById('gs-parties').textContent = t.parties;
         document.getElementById('gs-pcs').textContent = fmtNum(t.pcs);
         document.getElementById('gs-wt').textContent = fmtWtKg(t.wg);
+        // Update stat labels with custom fields
+        const labels = gs.querySelectorAll('.stat-chip-lbl');
+        if (labels[0]) labels[0].textContent = F().party + 's';
+        if (labels[1]) labels[1].textContent = 'Total ' + F().quantity;
+        if (labels[2]) labels[2].textContent = 'Total Wt';
     } else gs.classList.add('hidden');
     if (data.parties.length > 2) sw.classList.remove('hidden'); else sw.classList.add('hidden');
 
     if (filtered.length === 0) {
         list.innerHTML = `<div class="empty-box"><span class="empty-icon">🧺</span>
-            <div class="empty-title">${q ? 'No results' : 'No Parties Yet'}</div>
-            <div class="empty-sub">${q ? 'Try a different search' : 'Tap + to create your first party'}</div></div>`;
+            <div class="empty-title">${q ? 'No results' : 'No ' + F().party + ' Yet'}</div>
+            <div class="empty-sub">${q ? 'Try a different search' : 'Tap + to create your first ' + F().party.toLowerCase()}</div></div>`;
         return;
     }
 
@@ -279,7 +313,7 @@ function renderParties() {
                 <span class="pcard-badge">${t.months} mo</span>
             </div>
             <div class="pcard-stats">
-                <div class="pcard-stat"><div class="pcard-stat-val">${fmtNum(t.pcs)}</div><div class="pcard-stat-lbl">Pieces</div></div>
+                <div class="pcard-stat"><div class="pcard-stat-val">${fmtNum(t.pcs)}</div><div class="pcard-stat-lbl">${F().quantity}</div></div>
                 <div class="pcard-stat"><div class="pcard-stat-val">${fmtWtKg(t.wg)}</div><div class="pcard-stat-lbl">Weight</div></div>
                 <div class="pcard-stat"><div class="pcard-stat-val">${t.cnt}</div><div class="pcard-stat-lbl">Entries</div></div>
             </div>
@@ -323,6 +357,9 @@ function saveParty(e) {
     e.preventDefault();
     const name = document.getElementById('ip-name').value.trim();
     if (!name) return;
+    // Duplicate check
+    const duplicate = data.parties.find(x => x.name.toLowerCase() === name.toLowerCase() && x.id !== editId);
+    if (duplicate) { toast('⚠️ Party "' + name + '" already exists'); return; }
     if (editId) {
         const p = data.parties.find(x => x.id === editId);
         if (p) p.name = name;
@@ -340,9 +377,12 @@ function delParty(id) {
     if (!p) return;
     const t = partyTotal(p);
     confirmDel(`Delete "${p.name}" and all its ${t.cnt} entries?`, () => {
+        const idx = data.parties.indexOf(p);
+        const backup = JSON.parse(JSON.stringify(p));
         data.parties = data.parties.filter(x => x.id !== id);
-        save(data); closeModal('m-del'); toast('Party deleted');
+        save(data); closeModal('m-del');
         if (curPartyId === id) navTo('parties'); else renderParties();
+        toastUndo('Party deleted', () => { data.parties.splice(idx, 0, backup); save(data); renderParties(); });
     });
 }
 function openPartyScreen(id) {
@@ -371,20 +411,22 @@ function renderMonths() {
     const list = document.getElementById('month-list');
     if (p.months.length === 0) {
         list.innerHTML = `<div class="empty-box"><span class="empty-icon">📅</span>
-            <div class="empty-title">No Months Yet</div>
-            <div class="empty-sub">Tap + to add a month</div></div>`;
+            <div class="empty-title">No ${F().month}s Yet</div>
+            <div class="empty-sub">Tap + to add a ${F().month.toLowerCase()}</div></div>`;
         return;
     }
     list.innerHTML = p.months.map(mo => {
         const t = monthTotal(mo);
+        const dateDisplay = mo.date ? `<div class="pcard-date">📆 ${fmtDate(mo.date)}</div>` : '';
         return `<div class="pcard" onclick="openMonthScreen('${mo.id}')">
             <button class="pcard-del" onclick="event.stopPropagation();delMonth('${mo.id}')" title="Delete">✕</button>
             <div class="pcard-top">
                 <span class="pcard-name">📅 ${escHtml(mo.name)}</span>
-                <span class="pcard-badge">${t.sizes} sizes</span>
+                <span class="pcard-badge">${t.sizes} ${F().size.toLowerCase()}s</span>
             </div>
+            ${dateDisplay}
             <div class="pcard-stats">
-                <div class="pcard-stat"><div class="pcard-stat-val">${fmtNum(t.pcs)}</div><div class="pcard-stat-lbl">Pieces</div></div>
+                <div class="pcard-stat"><div class="pcard-stat-val">${fmtNum(t.pcs)}</div><div class="pcard-stat-lbl">${F().quantity}</div></div>
                 <div class="pcard-stat"><div class="pcard-stat-val">${fmtWtKg(t.wg)}</div><div class="pcard-stat-lbl">Weight</div></div>
                 <div class="pcard-stat"><div class="pcard-stat-val">${t.cnt}</div><div class="pcard-stat-lbl">Entries</div></div>
             </div>
@@ -394,34 +436,39 @@ function renderMonths() {
 
 function openMonthModal(isEdit) {
     const now = new Date();
-    const defaultVal = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const defaultDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     if (isEdit && curMonthId) {
         const mo = getMonth();
         if (!mo) return;
         editId = mo.id;
         document.getElementById('m-month-title').textContent = 'Edit Month';
-        document.getElementById('im-month').value = mo.raw || defaultVal;
+        document.getElementById('im-date').value = mo.date || defaultDate;
     } else {
         editId = null;
         document.getElementById('m-month-title').textContent = 'Add Month';
         document.getElementById('f-month').reset();
-        document.getElementById('im-month').value = defaultVal;
+        document.getElementById('im-date').value = defaultDate;
     }
     openModal('m-month');
 }
 function saveMonth(e) {
     e.preventDefault();
-    const raw = document.getElementById('im-month').value;
-    if (!raw) return;
+    const dateVal = document.getElementById('im-date').value;
+    if (!dateVal) return;
+    const [y, m] = dateVal.split('-');
+    const raw = `${y}-${m}`;
     const name = fmtMonthInput(raw);
     const p = getParty();
     if (!p) return;
+    // Duplicate month check
+    const dupMonth = p.months.find(x => x.date === dateVal && x.id !== editId);
+    if (dupMonth) { toast('⚠️ Date ' + fmtDate(dateVal) + ' already exists'); return; }
     if (editId) {
         const mo = p.months.find(x => x.id === editId);
-        if (mo) { mo.name = name; mo.raw = raw; }
+        if (mo) { mo.name = name; mo.raw = raw; mo.date = dateVal; }
         toast('Month updated ✓');
     } else {
-        p.months.push({ id: genId(), name, raw, sizes: [] });
+        p.months.push({ id: genId(), name, raw, date: dateVal, sizes: [] });
         toast('Month added ✓');
     }
     save(data); closeModal('m-month'); renderMonths();
@@ -435,9 +482,12 @@ function delMonth(id) {
     if (!mo) return;
     const t = monthTotal(mo);
     confirmDel(`Delete "${mo.name}" and all ${t.cnt} entries?`, () => {
+        const idx = p.months.indexOf(mo);
+        const backup = JSON.parse(JSON.stringify(mo));
         p.months = p.months.filter(x => x.id !== id);
-        save(data); closeModal('m-del'); toast('Month deleted');
+        save(data); closeModal('m-del');
         if (curMonthId === id) navTo('months'); else renderMonths();
+        toastUndo('Month deleted', () => { p.months.splice(idx, 0, backup); save(data); renderMonths(); });
     });
 }
 function openMonthScreen(id) {
@@ -467,12 +517,13 @@ function renderSizes() {
     const list = document.getElementById('size-list');
     if (mo.sizes.length === 0) {
         list.innerHTML = `<div class="empty-box"><span class="empty-icon">📐</span>
-            <div class="empty-title">No Sizes Yet</div>
-            <div class="empty-sub">Tap + to add a towel size</div></div>`;
+            <div class="empty-title">No ${F().size}s Yet</div>
+            <div class="empty-sub">Tap + to add a ${F().size.toLowerCase()}</div></div>`;
         return;
     }
     list.innerHTML = mo.sizes.map(sz => {
         const t = sizeTotal(sz);
+        const expGmsDisplay = sz.expectedGrams ? `<div class="pcard-stat"><div class="pcard-stat-val">${fmtNum(sz.expectedGrams)}</div><div class="pcard-stat-lbl">Expected/pc</div></div>` : '';
         return `<div class="pcard" onclick="openSizeScreen('${sz.id}')">
             <button class="pcard-del" onclick="event.stopPropagation();delSize('${sz.id}')" title="Delete">✕</button>
             <div class="pcard-top">
@@ -480,9 +531,9 @@ function renderSizes() {
                 <span class="pcard-badge">${t.cnt} entries</span>
             </div>
             <div class="pcard-stats">
-                <div class="pcard-stat"><div class="pcard-stat-val">${fmtNum(t.pcs)}</div><div class="pcard-stat-lbl">Pieces</div></div>
+                <div class="pcard-stat"><div class="pcard-stat-val">${fmtNum(t.pcs)}</div><div class="pcard-stat-lbl">${F().quantity}</div></div>
                 <div class="pcard-stat"><div class="pcard-stat-val">${fmtWtKg(t.wg)}</div><div class="pcard-stat-lbl">Weight</div></div>
-                <div class="pcard-stat"><div class="pcard-stat-val">${t.cnt}</div><div class="pcard-stat-lbl">Entries</div></div>
+                ${expGmsDisplay}
             </div>
         </div>`;
     }).join('');
@@ -495,6 +546,7 @@ function openSizeModal(isEdit) {
         editId = sz.id;
         document.getElementById('m-size-title').textContent = 'Edit Size';
         document.getElementById('is-size').value = sz.name;
+        document.getElementById('is-expgms').value = sz.expectedGrams || '';
     } else {
         editId = null;
         document.getElementById('m-size-title').textContent = 'Add Towel Size';
@@ -506,15 +558,19 @@ function openSizeModal(isEdit) {
 function saveSize(e) {
     e.preventDefault();
     const name = document.getElementById('is-size').value.trim();
+    const expgms = parseFloat(document.getElementById('is-expgms').value) || 0;
     if (!name) return;
     const mo = getMonth();
     if (!mo) return;
     if (editId) {
         const sz = mo.sizes.find(x => x.id === editId);
-        if (sz) sz.name = name;
+        if (sz) {
+            sz.name = name;
+            sz.expectedGrams = expgms;
+        }
         toast('Size updated ✓');
     } else {
-        mo.sizes.push({ id: genId(), name, entries: [] });
+        mo.sizes.push({ id: genId(), name, expectedGrams: expgms, entries: [] });
         toast('Size added ✓');
     }
     save(data); closeModal('m-size'); renderSizes();
@@ -526,9 +582,12 @@ function delSize(id) {
     if (!sz) return;
     const t = sizeTotal(sz);
     confirmDel(`Delete size "${sz.name}" and all ${t.cnt} entries?`, () => {
+        const idx = mo.sizes.indexOf(sz);
+        const backup = JSON.parse(JSON.stringify(sz));
         mo.sizes = mo.sizes.filter(x => x.id !== id);
-        save(data); closeModal('m-del'); toast('Size deleted');
+        save(data); closeModal('m-del');
         if (curSizeId === id) navTo('sizes'); else renderSizes();
+        toastUndo('Size deleted', () => { mo.sizes.splice(idx, 0, backup); save(data); renderSizes(); });
     });
 }
 function openSizeScreen(id) {
@@ -568,16 +627,13 @@ function renderEntries() {
 
     const tbody = document.getElementById('etbody');
     if (t.cnt === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text3);">
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text3);">
             <span style="font-size:36px;display:block;margin-bottom:8px;">📝</span>
             No entries yet. Tap <strong>+</strong> to add.</td></tr>`;
         return;
     }
     tbody.innerHTML = sz.entries.map((e, i) => `<tr>
         <td><span class="entry-idx">${i + 1}</span></td>
-        <td class="td-img">${e.img
-            ? `<img class="entry-thumb" src="${e.img}" onclick="viewImage(${i})" alt="#${i + 1}">`
-            : `<div class="no-img-icon">📷</div>`}</td>
         <td class="td-pcs">${fmtNum(e.pcs)} pcs</td>
         <td class="td-wt">${fmtWt(e.wg)}</td>
         <td class="td-wpc">${e.pcs > 0 ? fmtWt(Math.round(e.wg / e.pcs)) : '—'}</td>
@@ -681,10 +737,10 @@ function saveEntry(e) {
     const sz = getSize();
     if (!sz) return;
     if (editEntryIdx !== null) {
-        sz.entries[editEntryIdx] = { pcs, wg, img: pendingImage || sz.entries[editEntryIdx].img || null };
+        sz.entries[editEntryIdx] = { pcs, wg };
         toast('Entry updated ✓');
     } else {
-        sz.entries.push({ pcs, wg, img: pendingImage || null });
+        sz.entries.push({ pcs, wg });
         toast('Entry added ✓');
     }
     pendingImage = null;
@@ -695,8 +751,10 @@ function confirmDelEntry(idx) {
     if (!sz) return;
     const e = sz.entries[idx];
     confirmDel(`Delete entry #${idx + 1} (${e.pcs} pcs, ${fmtWt(e.wg)})?`, () => {
+        const backup = JSON.parse(JSON.stringify(e));
         sz.entries.splice(idx, 1);
-        save(data); closeModal('m-del'); renderEntries(); toast('Entry deleted');
+        save(data); closeModal('m-del'); renderEntries();
+        toastUndo('Entry deleted', () => { sz.entries.splice(idx, 0, backup); save(data); renderEntries(); });
     });
 }
 
