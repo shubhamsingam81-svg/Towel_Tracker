@@ -40,12 +40,13 @@ function toggleDarkMode() {
 function applyDarkMode() {
     const html = document.documentElement;
     if (appSettings.darkMode) {
-        html.style.colorScheme = 'dark';
-        document.body.style.background = '#0f172a';
+        html.classList.add('dark');
     } else {
-        html.style.colorScheme = 'light';
-        document.body.style.background = '#f8fafb';
+        html.classList.remove('dark');
     }
+    // Update toggle button text if it exists
+    const toggle = document.getElementById('dm-toggle');
+    if (toggle) toggle.textContent = appSettings.darkMode ? 'ON' : 'OFF';
 }
 
 // ===== ANALYTICS & INSIGHTS =====
@@ -242,20 +243,38 @@ function restoreData() {
     input.accept = '.json';
     input.onchange = (e) => {
         const file = e.target.files[0];
+        if (!file) return;
+        if (file.size > 50 * 1024 * 1024) { toast('File too large (max 50MB)'); return; }
         const reader = new FileReader();
         reader.onload = (event) => {
             try {
                 const backup = JSON.parse(event.target.result);
-                if (backup.data && backup.data.parties) {
-                    data = backup.data;
+                const d = backup.data || backup;
+                if (!d || !Array.isArray(d.parties)) { toast('Invalid backup: no parties array found'); return; }
+                // Validate structure
+                let valid = true;
+                d.parties.forEach(p => {
+                    if (!p.id || !p.name || !Array.isArray(p.months)) valid = false;
+                    if (valid) p.months.forEach(m => {
+                        if (!m.id || !m.name || !Array.isArray(m.sizes)) valid = false;
+                        if (valid) m.sizes.forEach(s => {
+                            if (!s.id || !s.name || !Array.isArray(s.entries)) valid = false;
+                        });
+                    });
+                });
+                if (!valid) { toast('Invalid backup: corrupted data structure'); return; }
+                // Keep a backup before overwriting
+                const prevData = JSON.stringify(data);
+                data = d;
+                save(data);
+                renderParties();
+                toastUndo('✓ Data restored (' + d.parties.length + ' parties)', () => {
+                    data = JSON.parse(prevData);
                     save(data);
                     renderParties();
-                    toast('✓ Data restored successfully');
-                } else {
-                    toast('Invalid backup file');
-                }
+                });
             } catch (err) {
-                toast('Error reading file');
+                toast('Error: invalid JSON file');
             }
         };
         reader.readAsText(file);
