@@ -6,9 +6,9 @@
     <meta name="theme-color" content="#5B61FF">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="ItemTracker">
+    <meta name="apple-mobile-web-app-title" content="Ravi Singam">
     <meta name="description" content="Professional inventory & item tracking system">
-    <title>ItemTracker</title>
+    <title>Ravi Singam</title>
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧺</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -20,7 +20,7 @@
     <div id="splash" class="splash">
         <div class="splash-content">
             <div class="splash-icon">📦</div>
-            <div class="splash-title">ItemTracker</div>
+            <div class="splash-title">Ravi Singam</div>
             <div class="splash-bar"><div class="splash-bar-fill"></div></div>
         </div>
     </div>
@@ -31,7 +31,7 @@
             <div class="safe-area-top"></div>
             <div class="header-inner">
                 <div class="header-row">
-                    <h1 class="app-title">📦 ItemTracker</h1>
+                    <h1 class="app-title">📦 Ravi Singam</h1>
                     <button class="icon-btn white" onclick="openChartsModal()" title="Charts">
                         <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M9 17v-5m4 5V9m4 8v-3"/><circle cx="9" cy="8" r="1"/><circle cx="13" cy="5" r="1"/><circle cx="17" cy="6" r="1"/></svg>
                     </button>
@@ -81,11 +81,8 @@
                         <p class="entry-sub">Select a month</p>
                     </div>
                     <div style="display: flex; gap: 5px;">
-                        <button class="icon-btn white" onclick="exportPartyExcel()" title="Export to Excel">
-                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20M2 12h20"/><path d="M6 6h12v12H6z"/></svg>
-                        </button>
-                        <button class="icon-btn white" onclick="exportPartyPDF()" title="Export to PDF">
-                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V10z"/><path d="M14 2v8h8M9 15h6M9 19h6"/></svg>
+                        <button class="icon-btn white" onclick="openExportDateModal('party')" title="Export Party">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
                         </button>
                         <button class="icon-btn white" onclick="openPartyModal(true)" title="Edit Party">
                             <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -145,11 +142,8 @@
                         <p class="entry-sub" id="e-sub"></p>
                     </div>
                     <div style="display: flex; gap: 5px;">
-                        <button class="icon-btn white" onclick="exportSizeExcel()" title="Export to Excel">
-                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20M2 12h20"/><path d="M6 6h12v12H6z"/></svg>
-                        </button>
-                        <button class="icon-btn white" onclick="exportSizePDF()" title="Export to PDF">
-                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V10z"/><path d="M14 2v8h8M9 15h6M9 19h6"/></svg>
+                        <button class="icon-btn white" onclick="openExportDateModal('size')" title="Export Size">
+                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
                         </button>
                         <button class="icon-btn white" onclick="openSizeModal(true)" title="Edit Size">
                             <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -201,8 +195,8 @@
             <div class="modal-handle"></div>
             <h2 id="m-month-title" class="modal-h">Add Month</h2>
             <form id="f-month" onsubmit="saveMonth(event)">
-                <label class="lbl">Month</label>
-                <div class="igroup"><span class="iico">📅</span><input type="month" id="im-month" class="itext" required></div>
+                <label class="lbl">Date</label>
+                <div class="igroup"><span class="iico">📆</span><input type="date" id="im-date" class="itext" required></div>
                 <div class="modal-btns">
                     <button type="button" class="btn ghost" onclick="closeModal('m-month')">Cancel</button>
                     <button type="submit" class="btn primary">Save</button>
@@ -219,6 +213,8 @@
             <form id="f-size" onsubmit="saveSize(event)">
                 <label class="lbl">Towel Size</label>
                 <div class="igroup"><span class="iico">📐</span><input type="text" id="is-size" class="itext" placeholder="e.g. 16x24, 30x60" required autocomplete="off"></div>
+                <label class="lbl">Expected Grams Per Piece</label>
+                <div class="igroup"><span class="iico">⚖️</span><input type="number" id="is-expgms" class="itext" placeholder="e.g. 500" min="0" step="0.01" autocomplete="off"></div>
                 <div class="modal-btns">
                     <button type="button" class="btn ghost" onclick="closeModal('m-size')">Cancel</button>
                     <button type="submit" class="btn primary">Save</button>
@@ -308,14 +304,16 @@
         <div class="modal-sheet">
             <div class="modal-handle"></div>
             <h2 class="modal-h">📊 Export All Data</h2>
-            <p style="color: #666; font-size: 14px; margin-bottom: 20px;">Choose export format for complete dataset</p>
-            <div class="export-options">
-                <button class="export-btn excel-btn" onclick="exportAllDataExcel(); closeModal('m-export')">
+            <p style="color: #666; font-size: 14px; margin-bottom: 16px;">Choose export format for complete dataset</p>
+            <label class="lbl">Delivery Date</label>
+            <div class="igroup"><span class="iico">📆</span><input type="date" id="iexp-close-date" class="itext" required></div>
+            <div class="export-options" style="margin-top: 16px;">
+                <button class="export-btn excel-btn" onclick="doExportAll('excel')">
                     <span class="export-icon">📊</span>
                     <span class="export-label">Export to Excel</span>
                     <span class="export-desc">.xlsx format</span>
                 </button>
-                <button class="export-btn pdf-btn" onclick="exportAllDataPDF(); closeModal('m-export')">
+                <button class="export-btn pdf-btn" onclick="doExportAll('pdf')">
                     <span class="export-icon">📄</span>
                     <span class="export-label">Export to PDF</span>
                     <span class="export-desc">.pdf format</span>
@@ -323,6 +321,32 @@
             </div>
             <div class="modal-btns" style="margin-top: 20px;">
                 <button class="btn ghost" onclick="closeModal('m-export')" style="width: 100%;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== MODAL: EXPORT WITH DELIVERY DATE (Party/Size) ========== -->
+    <div id="m-export-date" class="modal-bg" onclick="closeBg(event,'m-export-date')">
+        <div class="modal-sheet">
+            <div class="modal-handle"></div>
+            <h2 class="modal-h" id="m-export-date-title">📊 Export Report</h2>
+            <p style="color: #666; font-size: 14px; margin-bottom: 16px;">Select the delivery date for this report</p>
+            <label class="lbl">Delivery Date</label>
+            <div class="igroup"><span class="iico">📆</span><input type="date" id="iexp-close-date2" class="itext" required></div>
+            <div class="export-options" style="margin-top: 16px;">
+                <button class="export-btn excel-btn" onclick="doExportWithDate('excel')">
+                    <span class="export-icon">📊</span>
+                    <span class="export-label">Export to Excel</span>
+                    <span class="export-desc">.xlsx format</span>
+                </button>
+                <button class="export-btn pdf-btn" onclick="doExportWithDate('pdf')">
+                    <span class="export-icon">📄</span>
+                    <span class="export-label">Export to PDF</span>
+                    <span class="export-desc">.pdf format</span>
+                </button>
+            </div>
+            <div class="modal-btns" style="margin-top: 20px;">
+                <button class="btn ghost" onclick="closeModal('m-export-date')" style="width: 100%;">Cancel</button>
             </div>
         </div>
     </div>
@@ -351,7 +375,7 @@
             
             <div style="margin-bottom: 20px; padding: 12px; background: #ECFDF5; border-left: 4px solid #10B981; border-radius: 8px;">
                 <div style="font-size: 12px; color: #059669; font-weight: 600;">ℹ️ Version 3.0.0</div>
-                <div style="font-size: 11px; color: #047857; margin-top: 4px;">ItemTracker • Professional Inventory System</div>
+                <div style="font-size: 11px; color: #047857; margin-top: 4px;">Ravi Singam • Professional Inventory System</div>
             </div>
             
             <div class="modal-btns" style="margin-top: 20px;">
@@ -436,12 +460,22 @@
     <!-- TOAST -->
     <div id="toast" class="toast"></div>
 
+    <!-- EXPORT LOADING OVERLAY -->
+    <div id="export-overlay" class="export-overlay hidden">
+        <div class="export-overlay-content">
+            <div class="export-spinner"></div>
+            <div class="export-overlay-text">Generating report...</div>
+        </div>
+    </div>
+
     <!-- App Scripts -->
     <script src="app.js"></script>
     
     <!-- Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
     
     <!-- Export functionality -->
